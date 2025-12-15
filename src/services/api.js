@@ -35,6 +35,13 @@ api.interceptors.response.use(
   }
 );
 
+// Auth API
+export const authAPI = {
+  login: (credentials) => api.post('/auth/login', credentials),
+  register: (data) => api.post('/auth/register', data),
+  getMe: () => api.get('/auth/me'),
+};
+
 // Teachers API
 export const teachersAPI = {
   getAll: (params) => api.get('/teachers', { params }),

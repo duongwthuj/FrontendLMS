@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import axios from 'axios';
-import { teachersAPI, subjectsAPI } from '../services/api'; // Reuse existing APIs
+import { teachersAPI, subjectsAPI, authAPI } from '../services/api'; // Reuse existing APIs
 import { BookOpen, Calendar, Plus, Edit, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 
 const Profile = () => {
@@ -58,9 +58,7 @@ const Profile = () => {
       // Teacher model virtuals 'teacherLevels' are not automatically populated unless we use .populate path.
       
       // Better approach: Get user -> Get teacherId -> Call getTeacherDetails
-      const meRes = await axios.get('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
-      });
+      const meRes = await authAPI.getMe();
       const teacherId = meRes.data.teacherId?._id;
       
       if (teacherId) {
