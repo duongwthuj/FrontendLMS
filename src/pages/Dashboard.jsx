@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+// import axios from 'axios'; // Removed raw axios usage
 import { Bar, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -80,12 +80,10 @@ const PersonalDashboard = () => {
     useEffect(() => {
         const fetchMyStats = async () => {
              try {
-                 const token = localStorage.getItem('token');
-                 const res = await axios.get('/api/dashboard/my-stats', {
-                     headers: { Authorization: `Bearer ${token}` }
-                 });
-                 console.log("Dashboard API Response:", res.data);
-                 setData(res.data.data);
+                 // const token = localStorage.getItem('token'); // Handled by interceptor
+                 const res = await dashboardAPI.getMyStats();
+                 console.log("Dashboard API Response:", res);
+                 setData(res.data);
              } catch (error) {
                  console.error("Error fetching personal stats", error);
              } finally {

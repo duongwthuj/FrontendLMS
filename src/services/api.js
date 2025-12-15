@@ -112,6 +112,9 @@ export const offsetClassesAPI = {
 
 // Dashboard/Statistics API
 export const dashboardAPI = {
+  // Get personal stats
+  getMyStats: () => api.get('/dashboard/my-stats'),
+
   // Get teaching hours statistics
   getTeachingHours: (params) => api.get('/dashboard/teaching-hours', { params }),
   getTeacherHoursDetail: (teacherId, params) => api.get(`/dashboard/teaching-hours/${teacherId}`, { params }),
