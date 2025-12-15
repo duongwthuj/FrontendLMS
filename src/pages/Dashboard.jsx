@@ -84,6 +84,7 @@ const PersonalDashboard = () => {
                  const res = await axios.get('/api/dashboard/my-stats', {
                      headers: { Authorization: `Bearer ${token}` }
                  });
+                 console.log("Dashboard API Response:", res.data);
                  setData(res.data.data);
              } catch (error) {
                  console.error("Error fetching personal stats", error);
@@ -97,7 +98,7 @@ const PersonalDashboard = () => {
     if (loading) return <div>Loading...</div>;
     if (!data) return <div>Không có dữ liệu.</div>;
 
-    const { stats, upcomingClasses } = data;
+    const { stats = {}, upcomingClasses = [] } = data || {};
 
     return (
         <div className="space-y-6">
@@ -110,7 +111,7 @@ const PersonalDashboard = () => {
                     <div className="flex justify-between items-start">
                         <div>
                             <p className="text-indigo-100 font-medium">Giờ dạy tháng này</p>
-                            <h3 className="text-3xl font-bold mt-2">{stats.hoursMonth}h</h3>
+                            <h3 className="text-3xl font-bold mt-2">{stats.hoursMonth || 0}h</h3>
                         </div>
                         <div className="p-2 bg-white/20 rounded-lg">
                              <Clock className="w-6 h-6 text-white" />
@@ -146,7 +147,7 @@ const PersonalDashboard = () => {
                     <div className="flex justify-between items-start">
                         <div>
                             <p className="text-secondary-500 font-medium">Lớp sắp tới (7 ngày)</p>
-                            <h3 className="text-3xl font-bold mt-2 text-secondary-900">{stats.upcomingCount}</h3>
+                            <h3 className="text-3xl font-bold mt-2 text-secondary-900">{stats.upcomingCount || 0}</h3>
                         </div>
                          <div className="p-2 bg-orange-50 rounded-lg">
                              <Calendar className="w-6 h-6 text-orange-600" />
@@ -589,7 +590,7 @@ const AdminDashboard = () => {
                     ...commonOptions.plugins,
                     legend: { position: 'bottom' }
                   },
-                  scales: { display: false }
+                  scales: { display: false } // REMOVED: Invalid for Doughnut
                 }} 
               />
             </div>
