@@ -59,13 +59,16 @@ const Profile = () => {
       
       // Better approach: Get user -> Get teacherId -> Call getTeacherDetails
       const meRes = await authAPI.getMe();
-      const teacherId = meRes.data.teacherId?._id;
+      console.log("Profile API Response:", meRes);
+      // Handle both wrapped { data: user } and unwrapped { user } responses
+      const userData = meRes.data || meRes; 
+      const teacherId = userData.teacherId?._id || userData.teacherId;
       
       if (teacherId) {
           const detailRes = await teachersAPI.getDetails(teacherId);
-          setProfile({ ...meRes.data, teacherDetails: detailRes.data });
+          setProfile({ ...userData, teacherDetails: detailRes.data || detailRes });
       } else {
-          setProfile(meRes.data);
+          setProfile(userData);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
