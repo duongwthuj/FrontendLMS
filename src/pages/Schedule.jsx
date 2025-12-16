@@ -842,15 +842,28 @@ const Schedule = () => {
   };
 
   const handleDeleteOffsetSubmit = async () => {
+    console.log('=== DEBUG: handleDeleteOffsetSubmit called ===');
+    console.log('offsetToDelete:', offsetToDelete);
+    console.log('offsetToDelete._id:', offsetToDelete?._id);
+    
+    if (!offsetToDelete || !offsetToDelete._id) {
+      console.error('ERROR: offsetToDelete or _id is missing!');
+      showNotification('Lỗi: Không tìm thấy dữ liệu offset để xóa', 'error');
+      return;
+    }
+    
     try {
-      await offsetClassesAPI.delete(offsetToDelete._id);
+      console.log('Calling API to delete offset with ID:', offsetToDelete._id);
+      const response = await offsetClassesAPI.delete(offsetToDelete._id);
+      console.log('Delete response:', response);
       showNotification('Đã xóa lớp offset', 'success');
       setShowDeleteOffsetModal(false);
       setOffsetToDelete(null);
       loadData();
     } catch (error) {
       console.error('Error deleting offset:', error);
-      showNotification('Lỗi khi xóa lớp offset', 'error');
+      console.error('Error details:', error.response?.data || error.message);
+      showNotification(`Lỗi khi xóa lớp offset: ${error.message}`, 'error');
     }
   };
 
