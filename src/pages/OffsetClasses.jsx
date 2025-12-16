@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Zap, RefreshCw, Check, X, Eye, Edit, Trash2, AlertCircle, CheckCircle, Info, BookMarked, TrendingUp, Search, Filter, MoreVertical, Calendar, Clock } from 'lucide-react';
-import { offsetClassesAPI, teachersAPI, subjectsAPI } from '../services/api';
+import { offsetClassesAPI, teachersAPI, subjectsAPI, googleSheetsAPI } from '../services/api';
 import { format } from 'date-fns';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -42,6 +42,8 @@ const OffsetClasses = () => {
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showAll, setShowAll] = useState(true);
   const [activeSubjectId, setActiveSubjectId] = useState('');
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   // Auto hide notification after 5 seconds
   useEffect(() => {
@@ -313,6 +315,21 @@ const OffsetClasses = () => {
     });
   };
 
+  const handleSyncFromGoogleSheets = async () => {
+    try {
+      setSyncing(true);
+      const response = await googleSheetsAPI.sync();
+      showNotification(`Đồng bộ thành công! ${response.message || ''}`, 'success');
+      loadData();
+      setShowSyncModal(false);
+    } catch (error) {
+      console.error('Error syncing from Google Sheets:', error);
+      showNotification(`Lỗi đồng bộ: ${error.message}`, 'error');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const variants = {
       pending: 'warning',
@@ -407,6 +424,45 @@ const OffsetClasses = () => {
                 onClick={handleConfirm}
               >
                 Xác nhận
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Sync Modal */}
+      {showSyncModal && (
+        <div className="fixed inset-0 bg-secondary-900/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="max-w-md w-full mx-4 animate-scale-up">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 p-2 bg-green-50 rounded-full">
+                <RefreshCw className={`w-6 h-6 text-green-600 ${syncing ? 'animate-spin' : ''}`} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-secondary-900 mb-2">
+                  Đồng bộ từ Google Sheets
+                </h3>
+                <p className="text-sm text-secondary-600">
+                  Đồng bộ dữ liệu lớp offset từ Google Sheets. Quá trình này có thể mất vài giây.
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex gap-3 justify-end">
+              <Button
+                variant="secondary"
+                onClick={() => setShowSyncModal(false)}
+                disabled={syncing}
+              >
+                Hủy
+              </Button>
+              <Button
+                variant="success"
+                onClick={handleSyncFromGoogleSheets}
+                disabled={syncing}
+                isLoading={syncing}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? 'Đang đồng bộ...' : 'Đồng bộ ngay'}
               </Button>
             </div>
           </Card>
