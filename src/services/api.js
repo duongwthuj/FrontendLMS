@@ -115,6 +115,10 @@ export const offsetClassesAPI = {
   // Status management
   markCompleted: (id) => api.patch(`/offset-classes/${id}/complete`),
   cancel: (id, reason) => api.patch(`/offset-classes/${id}/cancel`, { reason }),
+
+  // Google Sheets integration
+  syncFromSheets: (data) => api.post('/offset-classes/sync-from-sheets', data),
+  previewFromSheets: (params) => api.get('/offset-classes/preview-sheets', { params }),
 };
 
 // Dashboard/Statistics API

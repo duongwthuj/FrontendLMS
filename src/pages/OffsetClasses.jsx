@@ -42,6 +42,15 @@ const OffsetClasses = () => {
   const [showAll, setShowAll] = useState(true);
   const [activeSubjectId, setActiveSubjectId] = useState('');
 
+  // Google Sheets Sync states
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncFormData, setSyncFormData] = useState({
+    spreadsheetId: '',
+    range: 'Sheet1!A2:Z',
+    overwrite: false
+  });
+
   // Auto hide notification after 5 seconds
   useEffect(() => {
     if (notification) {
@@ -543,6 +552,15 @@ const OffsetClasses = () => {
           >
             <RefreshCw className="w-3 h-3" />
             Làm mới
+          </button>
+
+          <div className="h-6 w-px bg-secondary-300 mx-2"></div>
+
+          <button
+            onClick={() => setShowSyncModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-white border border-green-200 rounded-lg hover:bg-green-50 transition-colors shadow-sm"
+          >
+            📥 Đồng bộ từ Google Sheets
           </button>
         </div>
       </Card>
@@ -1164,6 +1182,141 @@ const OffsetClasses = () => {
                     </Button>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Google Sheets Sync Modal */}
+      {showSyncModal && (
+        <div className="fixed inset-0 bg-secondary-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden animate-scale-up">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <span className="text-xl">📥</span>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-secondary-900">Đồng bộ từ Google Sheets</h2>
+                    <p className="text-sm text-secondary-500">Tự động lấy dữ liệu lớp offset từ Google Sheets</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowSyncModal(false)}
+                  className="p-2 text-secondary-400 hover:text-secondary-600 hover:bg-secondary-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-1">
+                    Spreadsheet ID <span className="text-danger-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={syncFormData.spreadsheetId}
+                    onChange={(e) => setSyncFormData({ ...syncFormData, spreadsheetId: e.target.value })}
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                    placeholder="VD: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+                  />
+                  <p className="text-xs text-secondary-500 mt-1">
+                    Lấy từ URL của Google Sheet: https://docs.google.com/spreadsheets/d/<strong>SPREADSHEET_ID</strong>/edit
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-1">
+                    Range (tùy chọn)
+                  </label>
+                  <input
+                    type="text"
+                    value={syncFormData.range}
+                    onChange={(e) => setSyncFormData({ ...syncFormData, range: e.target.value })}
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                    placeholder="Sheet1!A2:Z"
+                  />
+                  <p className="text-xs text-secondary-500 mt-1">
+                    Định dạng: TênSheet!A2:Z (mặc định: Sheet1!A2:Z)
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="overwrite"
+                    checked={syncFormData.overwrite}
+                    onChange={(e) => setSyncFormData({ ...syncFormData, overwrite: e.target.checked })}
+                    className="w-4 h-4 text-primary-600 border-secondary-300 rounded focus:ring-primary-500"
+                  />
+                  <label htmlFor="overwrite" className="text-sm text-secondary-700">
+                    Ghi đè dữ liệu nếu đã tồn tại
+                  </label>
+                </div>
+
+                <div className="bg-warning-50 border border-warning-200 rounded-lg p-3">
+                  <div className="flex gap-2">
+                    <AlertCircle className="w-5 h-5 text-warning-600 flex-shrink-0" />
+                    <div className="text-sm text-warning-800">
+                      <p className="font-medium">Lưu ý:</p>
+                      <ul className="list-disc list-inside mt-1 space-y-0.5">
+                        <li>Đảm bảo Google Sheet đã được chia sẻ với Service Account</li>
+                        <li>Cấu trúc sheet phải đúng định dạng yêu cầu</li>
+                        <li>Dữ liệu sẽ được import vào hệ thống</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-6 mt-6 border-t border-secondary-100">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowSyncModal(false)}
+                  className="flex-1"
+                >
+                  Hủy
+                </Button>
+                <Button
+                  variant="success"
+                  onClick={async () => {
+                    if (!syncFormData.spreadsheetId) {
+                      showNotification('Vui lòng nhập Spreadsheet ID!', 'error');
+                      return;
+                    }
+                    setSyncing(true);
+                    try {
+                      const response = await offsetClassesAPI.syncFromSheets({
+                        spreadsheetId: syncFormData.spreadsheetId,
+                        range: syncFormData.range || 'Sheet1!A2:Z',
+                        overwrite: syncFormData.overwrite
+                      });
+                      if (response.success) {
+                        const { results } = response.data || response;
+                        const message = `Đồng bộ thành công! Tạo mới: ${results?.created || 0}, Cập nhật: ${results?.updated || 0}, Bỏ qua: ${results?.skipped || 0}`;
+                        showNotification(message, 'success');
+                        loadData();
+                        setShowSyncModal(false);
+                        setSyncFormData({ spreadsheetId: '', range: 'Sheet1!A2:Z', overwrite: false });
+                      } else {
+                        showNotification(response.message || 'Có lỗi xảy ra khi đồng bộ!', 'error');
+                      }
+                    } catch (error) {
+                      console.error('Sync error:', error);
+                      showNotification(`Lỗi đồng bộ: ${error.message}`, 'error');
+                    } finally {
+                      setSyncing(false);
+                    }
+                  }}
+                  disabled={syncing || !syncFormData.spreadsheetId}
+                  isLoading={syncing}
+                  className="flex-1"
+                >
+                  {syncing ? 'Đang đồng bộ...' : 'Bắt đầu đồng bộ'}
+                </Button>
               </div>
             </div>
           </div>
