@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Zap, RefreshCw, Check, X, Eye, Edit, Trash2, AlertCircle, CheckCircle, Info, BookMarked, TrendingUp, Search, Filter, MoreVertical, Calendar, Clock } from 'lucide-react';
+import { Plus, Zap, RefreshCw, Check, X, Eye, Edit, Trash2, AlertCircle, CheckCircle, Info, BookMarked, TrendingUp, Search, Filter, MoreVertical, Calendar, Clock, RotateCcw } from 'lucide-react';
 import { offsetClassesAPI, teachersAPI, subjectsAPI, googleSheetsAPI } from '../services/api';
 import { format } from 'date-fns';
 import Card from '../components/ui/Card';
@@ -239,6 +239,19 @@ const OffsetClasses = () => {
         loadData();
       } catch (error) {
         console.error('Error reallocating:', error);
+        showNotification(`Có lỗi xảy ra: ${error.message}`, 'error');
+      }
+    });
+  };
+
+  const handleRevertToPending = async (id) => {
+    showConfirm('Bạn có chắc chắn muốn đưa lớp này về trạng thái chờ xử lý? Giáo viên hiện tại sẽ bị hủy phân công.', async () => {
+      try {
+        await offsetClassesAPI.revertToPending(id);
+        showNotification('Đã chuyển về trạng thái chờ xử lý!', 'success');
+        loadData();
+      } catch (error) {
+        console.error('Error reverting to pending:', error);
         showNotification(`Có lỗi xảy ra: ${error.message}`, 'error');
       }
     });
@@ -897,6 +910,13 @@ const OffsetClasses = () => {
                           title="Tái phân bổ"
                         >
                           <RefreshCw className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleRevertToPending(offsetClass._id)}
+                          className="p-1.5 text-secondary-500 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                          title="Về chờ xử lý"
+                        >
+                          <RotateCcw className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleMarkCompleted(offsetClass._id)}

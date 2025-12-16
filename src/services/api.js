@@ -111,6 +111,7 @@ export const offsetClassesAPI = {
   // Auto-assignment
   autoAssign: (id) => api.post(`/offset-classes/${id}/auto-assign`),
   reallocate: (id) => api.post(`/offset-classes/${id}/reallocate`),
+  revertToPending: (id) => api.patch(`/offset-classes/${id}/revert-pending`),
 
   // Status management
   markCompleted: (id) => api.patch(`/offset-classes/${id}/complete`),
