@@ -547,6 +547,15 @@ const OffsetClasses = () => {
             <RefreshCw className="w-3 h-3" />
             Làm mới
           </button>
+
+          <div className="h-6 w-px bg-secondary-300 mx-2"></div>
+
+          <button
+            onClick={() => setShowSyncModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-white border border-green-200 rounded-lg hover:bg-green-50 transition-colors shadow-sm"
+          >
+            📥 Đồng bộ từ Google Sheets
+          </button>
         </div>
       </Card>
 
