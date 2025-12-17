@@ -43,7 +43,7 @@ const OffsetClasses = () => {
   const [showAll, setShowAll] = useState(true);
   const [activeSubjectId, setActiveSubjectId] = useState('');
   const [showSyncModal, setShowSyncModal] = useState(false);
-  const [showSyncModal, setShowSyncModal] = useState(false);
+
   const [syncing, setSyncing] = useState(false);
   const [groupByEmail, setGroupByEmail] = useState(false);
 
