@@ -756,7 +756,7 @@ const OffsetClasses = () => {
                   className="rounded border-secondary-300 text-primary-600 focus:ring-primary-500"
                 />
                 <label htmlFor="groupByEmail" className="text-sm text-secondary-700 cursor-pointer select-none">
-                  Gom nhóm theo email
+                  Gom nhóm theo yêu cầu (Cells)
                 </label>
               </div>
 
@@ -805,8 +805,14 @@ const OffsetClasses = () => {
               // Grouped view
               Object.entries(
                 offsetClasses.reduce((groups, offsetClass) => {
-                  // Only group if there is an email, otherwise put in 'Others'
-                  const key = offsetClass.studentEmail || 'Khác';
+                  // Group by Email + SentTime to identify specific requests (cells)
+                  let key;
+                  if (offsetClass.emailSentTime) {
+                    key = `${offsetClass.studentEmail}:::${offsetClass.emailSentTime}`;
+                  } else {
+                    key = offsetClass.studentEmail || 'Khác';
+                  }
+
                   if (!groups[key]) {
                     groups[key] = [];
                   }
@@ -814,17 +820,45 @@ const OffsetClasses = () => {
                   return groups;
                 }, {})
               ).sort((a, b) => {
+                 const [keyA, classesA] = a;
+                 const [keyB, classesB] = b;
+                 
                  // Sort 'Khác' to the bottom
-                 if (a[0] === 'Khác') return 1;
-                 if (b[0] === 'Khác') return -1;
-                 return a[0].localeCompare(b[0]);
-              }).map(([email, classes]) => (
-                <React.Fragment key={email}>
-                  <tr className="bg-secondary-100">
-                    <td colSpan="6" className="px-6 py-2 text-sm font-bold text-secondary-800">
-                      📧 {email} <span className="font-normal text-secondary-500">({classes.length} lớp)</span>
+                 if (keyA === 'Khác') return 1;
+                 if (keyB === 'Khác') return -1;
+                 
+                 // Sort by date (newest first) based on scheduledDate of the first class in group
+                 const dateA = new Date(classesA[0]?.scheduledDate || 0);
+                 const dateB = new Date(classesB[0]?.scheduledDate || 0);
+                 return dateB - dateA;
+              }).map(([groupKey, classes]) => (
+                <React.Fragment key={groupKey}>
+                  <tr className="bg-secondary-100/80 border-b border-secondary-200">
+                    <td colSpan="6" className="px-6 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-lg shadow-sm">
+                          <span className="text-xl">📧</span>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                             <span className="font-bold text-secondary-900 text-sm">
+                               {groupKey.includes(':::') ? groupKey.split(':::')[0] : groupKey}
+                             </span>
+                             <span className="px-2 py-0.5 rounded-full bg-secondary-200 text-secondary-700 text-xs font-medium">
+                               {classes.length} lớp
+                             </span>
+                          </div>
+                          {classes[0]?.emailSentTime && (
+                            <div className="flex items-center gap-1 mt-0.5 text-xs text-secondary-500">
+                              <Clock className="w-3 h-3" />
+                              <span>Gửi lúc: {format(new Date(classes[0].emailSentTime), 'HH:mm dd/MM/yyyy')}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </td>
                   </tr>
+
                   {classes.map((offsetClass) => (
                     <tr key={offsetClass._id} className="hover:bg-secondary-50 transition-colors">
                       <td className="px-6 py-4">
