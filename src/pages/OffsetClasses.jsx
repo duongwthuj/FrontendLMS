@@ -806,12 +806,13 @@ const OffsetClasses = () => {
               Object.entries(
                 offsetClasses.reduce((groups, offsetClass) => {
                   // Group by Email + SentTime to identify specific requests (cells)
-                  let key;
-                  if (offsetClass.emailSentTime) {
-                    key = `${offsetClass.studentEmail}:::${offsetClass.emailSentTime}`;
-                  } else {
-                    key = offsetClass.studentEmail || 'Khác';
-                  }
+                  // key format: email|timestamp
+                  const email = offsetClass.studentEmail ? offsetClass.studentEmail.toLowerCase().trim() : 'others';
+                  const timestamp = offsetClass.emailSentTime 
+                    ? new Date(offsetClass.emailSentTime).toISOString() 
+                    : 'manual';
+                  
+                  const key = `${email}:::${timestamp}`;
 
                   if (!groups[key]) {
                     groups[key] = [];
@@ -831,7 +832,15 @@ const OffsetClasses = () => {
                  const dateA = new Date(classesA[0]?.scheduledDate || 0);
                  const dateB = new Date(classesB[0]?.scheduledDate || 0);
                  return dateB - dateA;
-              }).map(([groupKey, classes]) => (
+              }).map(([groupKey, classes]) => {
+                const isCompositeKey = groupKey.includes(':::');
+                const rawEmail = isCompositeKey ? groupKey.split(':::')[0] : groupKey;
+                const email = rawEmail === 'others' ? 'Khác' : rawEmail;
+                
+                const rawTime = isCompositeKey ? groupKey.split(':::')[1] : null;
+                const sentTime = rawTime !== 'manual' ? rawTime : null;
+                
+                return (
                 <React.Fragment key={groupKey}>
                   <tr className="bg-secondary-100/80 border-b border-secondary-200">
                     <td colSpan="6" className="px-6 py-3">
@@ -842,16 +851,16 @@ const OffsetClasses = () => {
                         <div>
                           <div className="flex items-center gap-2">
                              <span className="font-bold text-secondary-900 text-sm">
-                               {groupKey.includes(':::') ? groupKey.split(':::')[0] : groupKey}
+                               {email}
                              </span>
                              <span className="px-2 py-0.5 rounded-full bg-secondary-200 text-secondary-700 text-xs font-medium">
                                {classes.length} lớp
                              </span>
                           </div>
-                          {classes[0]?.emailSentTime && (
+                          {sentTime && (
                             <div className="flex items-center gap-1 mt-0.5 text-xs text-secondary-500">
                               <Clock className="w-3 h-3" />
-                              <span>Gửi lúc: {format(new Date(classes[0].emailSentTime), 'HH:mm dd/MM/yyyy')}</span>
+                              <span>Gửi lúc: {format(new Date(sentTime), 'HH:mm dd/MM/yyyy')}</span>
                             </div>
                           )}
                         </div>
@@ -1027,7 +1036,8 @@ const OffsetClasses = () => {
                     </tr>
                   ))}
                 </React.Fragment>
-              ))
+                );
+              })
             ) : (
               // Standard View
               offsetClasses.map((offsetClass) => (
