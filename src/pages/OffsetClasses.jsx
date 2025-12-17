@@ -43,7 +43,9 @@ const OffsetClasses = () => {
   const [showAll, setShowAll] = useState(true);
   const [activeSubjectId, setActiveSubjectId] = useState('');
   const [showSyncModal, setShowSyncModal] = useState(false);
+  const [showSyncModal, setShowSyncModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [groupByEmail, setGroupByEmail] = useState(false);
 
   // Auto hide notification after 5 seconds
   useEffect(() => {
@@ -745,6 +747,19 @@ const OffsetClasses = () => {
             </div>
 
             <div className="ml-auto flex items-center gap-2">
+              <div className="flex items-center gap-2 mr-4">
+                <input
+                  type="checkbox"
+                  id="groupByEmail"
+                  checked={groupByEmail}
+                  onChange={(e) => setGroupByEmail(e.target.checked)}
+                  className="rounded border-secondary-300 text-primary-600 focus:ring-primary-500"
+                />
+                <label htmlFor="groupByEmail" className="text-sm text-secondary-700 cursor-pointer select-none">
+                  Gom nhóm theo email
+                </label>
+              </div>
+
               <span className="text-sm text-secondary-500">Hiển thị:</span>
               <button
                 onClick={() => setShowAll(!showAll)}
@@ -786,173 +801,369 @@ const OffsetClasses = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-secondary-200">
-            {offsetClasses.map((offsetClass) => (
-              <tr key={offsetClass._id} className="hover:bg-secondary-50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 bg-secondary-100 rounded-lg flex items-center justify-center">
-                        <span className="text-sm font-bold text-secondary-700">
-                          {offsetClass.subjectLevelId?.subjectId?.code || '?'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-semibold text-secondary-900">
-                          {offsetClass.subjectLevelId?.subjectId?.name || 'Chưa có môn học'}
-                        </span>
-                        <span className="px-1.5 py-0.5 bg-secondary-100 text-secondary-600 text-[10px] font-bold uppercase tracking-wider rounded">
-                          HP{offsetClass.subjectLevelId?.semester || '?'}
-                        </span>
-                      </div>
-                      <div className="text-sm text-secondary-600 mb-1 font-mono">
-                        {offsetClass.className}
-                      </div>
-                      {offsetClass.reason && (
-                        <div className="text-xs text-secondary-500 mt-1 line-clamp-1 italic">
-                          "{offsetClass.reason}"
+            {groupByEmail ? (
+              // Grouped view
+              Object.entries(
+                offsetClasses.reduce((groups, offsetClass) => {
+                  // Only group if there is an email, otherwise put in 'Others'
+                  const key = offsetClass.studentEmail || 'Khác';
+                  if (!groups[key]) {
+                    groups[key] = [];
+                  }
+                  groups[key].push(offsetClass);
+                  return groups;
+                }, {})
+              ).sort((a, b) => {
+                 // Sort 'Khác' to the bottom
+                 if (a[0] === 'Khác') return 1;
+                 if (b[0] === 'Khác') return -1;
+                 return a[0].localeCompare(b[0]);
+              }).map(([email, classes]) => (
+                <React.Fragment key={email}>
+                  <tr className="bg-secondary-100">
+                    <td colSpan="6" className="px-6 py-2 text-sm font-bold text-secondary-800">
+                      📧 {email} <span className="font-normal text-secondary-500">({classes.length} lớp)</span>
+                    </td>
+                  </tr>
+                  {classes.map((offsetClass) => (
+                    <tr key={offsetClass._id} className="hover:bg-secondary-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-10 h-10 bg-secondary-100 rounded-lg flex items-center justify-center">
+                              <span className="text-sm font-bold text-secondary-700">
+                                {offsetClass.subjectLevelId?.subjectId?.code || '?'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-semibold text-secondary-900">
+                                {offsetClass.subjectLevelId?.subjectId?.name || 'Chưa có môn học'}
+                              </span>
+                              <span className="px-1.5 py-0.5 bg-secondary-100 text-secondary-600 text-[10px] font-bold uppercase tracking-wider rounded">
+                                HP{offsetClass.subjectLevelId?.semester || '?'}
+                              </span>
+                            </div>
+                            <div className="text-sm text-secondary-600 mb-1 font-mono">
+                              {offsetClass.className}
+                            </div>
+                            {offsetClass.reason && (
+                              <div className="text-xs text-secondary-500 mt-1 line-clamp-1 italic">
+                                "{offsetClass.reason}"
+                              </div>
+                            )}
+                            {offsetClass.meetingLink && (
+                              <div className="mt-1">
+                                <a 
+                                  href={offsetClass.meetingLink} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium hover:underline"
+                                >
+                                  Link học online →
+                                </a>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                      {offsetClass.meetingLink && (
-                        <div className="mt-1">
-                          <a 
-                            href={offsetClass.meetingLink} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium hover:underline"
-                          >
-                            Link học online →
-                          </a>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center text-sm font-medium text-secondary-900">
+                            <Calendar className="w-4 h-4 mr-2 text-secondary-400" />
+                            {format(new Date(offsetClass.scheduledDate), 'dd/MM/yyyy')}
+                          </div>
+                          <div className="flex items-center text-sm text-secondary-600">
+                            <Clock className="w-4 h-4 mr-2 text-secondary-400" />
+                            {offsetClass.startTime} - {offsetClass.endTime}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center text-sm font-medium text-secondary-900">
-                      <Calendar className="w-4 h-4 mr-2 text-secondary-400" />
-                      {format(new Date(offsetClass.scheduledDate), 'dd/MM/yyyy')}
-                    </div>
-                    <div className="flex items-center text-sm text-secondary-600">
-                      <Clock className="w-4 h-4 mr-2 text-secondary-400" />
-                      {offsetClass.startTime} - {offsetClass.endTime}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  {offsetClass.assignedTeacherId ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 border border-white shadow-sm">
-                        <span className="text-primary-700 text-xs font-bold">
-                          {offsetClass.assignedTeacherId.name?.charAt(0)}
-                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {offsetClass.assignedTeacherId ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 border border-white shadow-sm">
+                              <span className="text-primary-700 text-xs font-bold">
+                                {offsetClass.assignedTeacherId.name?.charAt(0)}
+                              </span>
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-secondary-900 truncate">
+                                {offsetClass.assignedTeacherId.name}
+                              </div>
+                              <div className="text-xs text-secondary-500 truncate">
+                                {offsetClass.assignedTeacherId.email}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-danger-50 border border-danger-100 rounded text-danger-700">
+                            <AlertCircle className="w-3 h-3" />
+                            <span className="text-xs font-medium">Chưa có GV</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-secondary-600 max-w-xs">
+                          {offsetClass.notes ? (
+                            <p className="line-clamp-2">{offsetClass.notes}</p>
+                          ) : (
+                            <span className="text-secondary-400 italic text-xs">Không có ghi chú</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {getStatusBadge(offsetClass.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {/* Edit */}
+                          {(offsetClass.status === 'pending' || offsetClass.status === 'assigned' || offsetClass.status === 'completed') && (
+                            <button
+                              onClick={() => handleEdit(offsetClass)}
+                              className="p-1.5 text-secondary-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                              title="Chỉnh sửa"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          )}
+                          
+                          {/* Auto-assign */}
+                          {offsetClass.status === 'pending' && !offsetClass.assignedTeacherId && (
+                            <button
+                              onClick={() => handleAutoAssign(offsetClass._id)}
+                              className="p-1.5 text-secondary-500 hover:text-success-600 hover:bg-success-50 rounded transition-colors"
+                              title="Tự động phân công"
+                            >
+                              <Zap className="w-4 h-4" />
+                            </button>
+                          )}
+                          
+                          {/* Reallocate & Complete */}
+                          {offsetClass.status === 'assigned' && (
+                            <>
+                              <button
+                                onClick={() => handleReallocate(offsetClass._id)}
+                                className="p-1.5 text-secondary-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                title="Tái phân bổ"
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleRevertToPending(offsetClass._id)}
+                                className="p-1.5 text-secondary-500 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                                title="Về chờ xử lý"
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleMarkCompleted(offsetClass._id)}
+                                className="p-1.5 text-secondary-500 hover:text-success-600 hover:bg-success-50 rounded transition-colors"
+                                title="Hoàn thành"
+                              >
+                                <Check className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                          
+                          {/* Cancel */}
+                          {(offsetClass.status === 'pending' || offsetClass.status === 'assigned') && (
+                            <button
+                              onClick={() => handleCancel(offsetClass._id)}
+                              className="p-1.5 text-secondary-500 hover:text-warning-600 hover:bg-warning-50 rounded transition-colors"
+                              title="Hủy lớp"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                          
+                          {/* Delete */}
+                          {(offsetClass.status === 'cancelled' || offsetClass.status === 'completed') && (
+                            <button
+                              onClick={() => handleDelete(offsetClass._id)}
+                              className="p-1.5 text-secondary-500 hover:text-danger-600 hover:bg-danger-50 rounded transition-colors"
+                              title="Xóa"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </React.Fragment>
+              ))
+            ) : (
+              // Standard View
+              offsetClasses.map((offsetClass) => (
+                <tr key={offsetClass._id} className="hover:bg-secondary-50 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 bg-secondary-100 rounded-lg flex items-center justify-center">
+                          <span className="text-sm font-bold text-secondary-700">
+                            {offsetClass.subjectLevelId?.subjectId?.code || '?'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium text-secondary-900 truncate">
-                          {offsetClass.assignedTeacherId.name}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-semibold text-secondary-900">
+                            {offsetClass.subjectLevelId?.subjectId?.name || 'Chưa có môn học'}
+                          </span>
+                          <span className="px-1.5 py-0.5 bg-secondary-100 text-secondary-600 text-[10px] font-bold uppercase tracking-wider rounded">
+                            HP{offsetClass.subjectLevelId?.semester || '?'}
+                          </span>
                         </div>
-                        <div className="text-xs text-secondary-500 truncate">
-                          {offsetClass.assignedTeacherId.email}
+                        <div className="text-sm text-secondary-600 mb-1 font-mono">
+                          {offsetClass.className}
                         </div>
+                        {offsetClass.reason && (
+                          <div className="text-xs text-secondary-500 mt-1 line-clamp-1 italic">
+                            "{offsetClass.reason}"
+                          </div>
+                        )}
+                        {offsetClass.meetingLink && (
+                          <div className="mt-1">
+                            <a 
+                              href={offsetClass.meetingLink} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium hover:underline"
+                            >
+                              Link học online →
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  ) : (
-                    <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-danger-50 border border-danger-100 rounded text-danger-700">
-                      <AlertCircle className="w-3 h-3" />
-                      <span className="text-xs font-medium">Chưa có GV</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center text-sm font-medium text-secondary-900">
+                        <Calendar className="w-4 h-4 mr-2 text-secondary-400" />
+                        {format(new Date(offsetClass.scheduledDate), 'dd/MM/yyyy')}
+                      </div>
+                      <div className="flex items-center text-sm text-secondary-600">
+                        <Clock className="w-4 h-4 mr-2 text-secondary-400" />
+                        {offsetClass.startTime} - {offsetClass.endTime}
+                      </div>
                     </div>
-                  )}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-secondary-600 max-w-xs">
-                    {offsetClass.notes ? (
-                      <p className="line-clamp-2">{offsetClass.notes}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    {offsetClass.assignedTeacherId ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 border border-white shadow-sm">
+                          <span className="text-primary-700 text-xs font-bold">
+                            {offsetClass.assignedTeacherId.name?.charAt(0)}
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-secondary-900 truncate">
+                            {offsetClass.assignedTeacherId.name}
+                          </div>
+                          <div className="text-xs text-secondary-500 truncate">
+                            {offsetClass.assignedTeacherId.email}
+                          </div>
+                        </div>
+                      </div>
                     ) : (
-                      <span className="text-secondary-400 italic text-xs">Không có ghi chú</span>
+                      <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-danger-50 border border-danger-100 rounded text-danger-700">
+                        <AlertCircle className="w-3 h-3" />
+                        <span className="text-xs font-medium">Chưa có GV</span>
+                      </div>
                     )}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(offsetClass.status)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    {/* Edit */}
-                    {(offsetClass.status === 'pending' || offsetClass.status === 'assigned' || offsetClass.status === 'completed') && (
-                      <button
-                        onClick={() => handleEdit(offsetClass)}
-                        className="p-1.5 text-secondary-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
-                        title="Chỉnh sửa"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                    )}
-                    
-                    {/* Auto-assign */}
-                    {offsetClass.status === 'pending' && !offsetClass.assignedTeacherId && (
-                      <button
-                        onClick={() => handleAutoAssign(offsetClass._id)}
-                        className="p-1.5 text-secondary-500 hover:text-success-600 hover:bg-success-50 rounded transition-colors"
-                        title="Tự động phân công"
-                      >
-                        <Zap className="w-4 h-4" />
-                      </button>
-                    )}
-                    
-                    {/* Reallocate & Complete */}
-                    {offsetClass.status === 'assigned' && (
-                      <>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-secondary-600 max-w-xs">
+                      {offsetClass.notes ? (
+                        <p className="line-clamp-2">{offsetClass.notes}</p>
+                      ) : (
+                        <span className="text-secondary-400 italic text-xs">Không có ghi chú</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {getStatusBadge(offsetClass.status)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      {/* Edit */}
+                      {(offsetClass.status === 'pending' || offsetClass.status === 'assigned' || offsetClass.status === 'completed') && (
                         <button
-                          onClick={() => handleReallocate(offsetClass._id)}
-                          className="p-1.5 text-secondary-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                          title="Tái phân bổ"
+                          onClick={() => handleEdit(offsetClass)}
+                          className="p-1.5 text-secondary-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                          title="Chỉnh sửa"
                         >
-                          <RefreshCw className="w-4 h-4" />
+                          <Edit className="w-4 h-4" />
                         </button>
+                      )}
+                      
+                      {/* Auto-assign */}
+                      {offsetClass.status === 'pending' && !offsetClass.assignedTeacherId && (
                         <button
-                          onClick={() => handleRevertToPending(offsetClass._id)}
-                          className="p-1.5 text-secondary-500 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
-                          title="Về chờ xử lý"
-                        >
-                          <RotateCcw className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleMarkCompleted(offsetClass._id)}
+                          onClick={() => handleAutoAssign(offsetClass._id)}
                           className="p-1.5 text-secondary-500 hover:text-success-600 hover:bg-success-50 rounded transition-colors"
-                          title="Hoàn thành"
+                          title="Tự động phân công"
                         >
-                          <Check className="w-4 h-4" />
+                          <Zap className="w-4 h-4" />
                         </button>
-                      </>
-                    )}
-                    
-                    {/* Cancel */}
-                    {(offsetClass.status === 'pending' || offsetClass.status === 'assigned') && (
-                      <button
-                        onClick={() => handleCancel(offsetClass._id)}
-                        className="p-1.5 text-secondary-500 hover:text-warning-600 hover:bg-warning-50 rounded transition-colors"
-                        title="Hủy lớp"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                    
-                    {/* Delete */}
-                    {(offsetClass.status === 'cancelled' || offsetClass.status === 'completed') && (
-                      <button
-                        onClick={() => handleDelete(offsetClass._id)}
-                        className="p-1.5 text-secondary-500 hover:text-danger-600 hover:bg-danger-50 rounded transition-colors"
-                        title="Xóa"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      )}
+                      
+                      {/* Reallocate & Complete */}
+                      {offsetClass.status === 'assigned' && (
+                        <>
+                          <button
+                            onClick={() => handleReallocate(offsetClass._id)}
+                            className="p-1.5 text-secondary-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title="Tái phân bổ"
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleRevertToPending(offsetClass._id)}
+                            className="p-1.5 text-secondary-500 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                            title="Về chờ xử lý"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleMarkCompleted(offsetClass._id)}
+                            className="p-1.5 text-secondary-500 hover:text-success-600 hover:bg-success-50 rounded transition-colors"
+                            title="Hoàn thành"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                      
+                      {/* Cancel */}
+                      {(offsetClass.status === 'pending' || offsetClass.status === 'assigned') && (
+                        <button
+                          onClick={() => handleCancel(offsetClass._id)}
+                          className="p-1.5 text-secondary-500 hover:text-warning-600 hover:bg-warning-50 rounded transition-colors"
+                          title="Hủy lớp"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                      
+                      {/* Delete */}
+                      {(offsetClass.status === 'cancelled' || offsetClass.status === 'completed') && (
+                        <button
+                          onClick={() => handleDelete(offsetClass._id)}
+                          className="p-1.5 text-secondary-500 hover:text-danger-600 hover:bg-danger-50 rounded transition-colors"
+                          title="Xóa"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
             </tbody>
           </table>
 
