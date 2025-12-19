@@ -46,6 +46,7 @@ const OffsetClasses = () => {
 
   const [syncing, setSyncing] = useState(false);
   const [groupByEmail, setGroupByEmail] = useState(false);
+  const [selectedClasses, setSelectedClasses] = useState(new Set());
 
   // Auto hide notification after 5 seconds
   useEffect(() => {
@@ -344,6 +345,139 @@ const OffsetClasses = () => {
       setSyncing(false);
     }
   };
+
+  // Toggle all classes in a group
+  const toggleGroupSelection = (classes) => {
+    const classIds = classes.map(c => c._id);
+    const newSelected = new Set(selectedClasses);
+    
+    // Check if all are selected
+    const allSelected = classIds.every(id => newSelected.has(id));
+    
+    if (allSelected) {
+      // Deselect all
+      classIds.forEach(id => newSelected.delete(id));
+    } else {
+      // Select all
+      classIds.forEach(id => newSelected.add(id));
+    }
+    
+    setSelectedClasses(newSelected);
+  };
+
+  // Check if all classes in group are selected
+  const isGroupFullySelected = (classes) => {
+    return classes.length > 0 && classes.every(c => selectedClasses.has(c._id));
+  };
+
+  // Bulk auto-assign for selected classes
+  const handleBulkAutoAssign = async (classIds) => {
+    if (classIds.length === 0) return;
+    
+    showConfirm(
+      `Bạn có chắc muốn tự động phân công ${classIds.length} lớp?`,
+      async () => {
+        setAutoAssigning(true);
+        try {
+          let successCount = 0;
+          let failCount = 0;
+          
+          for (const id of classIds) {
+            try {
+              await offsetClassesAPI.autoAssign(id);
+              successCount++;
+            } catch (error) {
+              failCount++;
+              console.error(`Failed to auto-assign ${id}:`, error);
+            }
+          }
+          
+          showNotification(
+            `Đã phân công ${successCount} lớp thành công${failCount > 0 ? `, ${failCount} lớp thất bại` : ''}`,
+            failCount === 0 ? 'success' : 'warning'
+          );
+          
+          await loadData();
+          setSelectedClasses(new Set());
+        } catch (error) {
+          showNotification('Có lỗi xảy ra khi phân công hàng loạt', 'error');
+        } finally {
+          setAutoAssigning(false);
+        }
+      }
+    );
+  };
+
+  // Bulk complete for selected classes
+  const handleBulkComplete = async (classIds) => {
+    if (classIds.length === 0) return;
+    
+    showConfirm(
+      `Bạn có chắc muốn đánh dấu hoàn thành ${classIds.length} lớp?`,
+      async () => {
+        try {
+          let successCount = 0;
+          let failCount = 0;
+          
+          for (const id of classIds) {
+            try {
+              await offsetClassesAPI.markCompleted(id);
+              successCount++;
+            } catch (error) {
+              failCount++;
+              console.error(`Failed to complete ${id}:`, error);
+            }
+          }
+          
+          showNotification(
+            `Đã hoàn thành ${successCount} lớp${failCount > 0 ? `, ${failCount} lớp thất bại` : ''}`,
+            failCount === 0 ? 'success' : 'warning'
+          );
+          
+          await loadData();
+          setSelectedClasses(new Set());
+        } catch (error) {
+          showNotification('Có lỗi xảy ra khi hoàn thành hàng loạt', 'error');
+        }
+      }
+    );
+  };
+
+  // Bulk cancel for selected classes
+  const handleBulkCancel = async (classIds) => {
+    if (classIds.length === 0) return;
+    
+    showConfirm(
+      `Bạn có chắc muốn hủy ${classIds.length} lớp?`,
+      async () => {
+        try {
+          let successCount = 0;
+          let failCount = 0;
+          
+          for (const id of classIds) {
+            try {
+              await offsetClassesAPI.cancel(id);
+              successCount++;
+            } catch (error) {
+              failCount++;
+              console.error(`Failed to cancel ${id}:`, error);
+            }
+          }
+          
+          showNotification(
+            `Đã hủy ${successCount} lớp${failCount > 0 ? `, ${failCount} lớp thất bại` : ''}`,
+            failCount === 0 ? 'success' : 'warning'
+          );
+          
+          await loadData();
+          setSelectedClasses(new Set());
+        } catch (error) {
+          showNotification('Có lỗi xảy ra khi hủy hàng loạt', 'error');
+        }
+      }
+    );
+  };
+
 
   const getStatusBadge = (status) => {
     const variants = {
@@ -849,29 +983,85 @@ const OffsetClasses = () => {
                   
                   <tr className="bg-gradient-to-r from-secondary-200 to-secondary-100 border-y-2 border-secondary-300 shadow-sm">
                     <td colSpan="6" className="px-6 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
-                          <span className="text-2xl">📧</span>
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                             <span className="font-bold text-secondary-900 text-base">
-                               {email}
-                             </span>
-                             <span className="px-2.5 py-1 rounded-full bg-blue-500 text-white text-xs font-bold shadow-sm">
-                               {classes.length} lớp
-                             </span>
+                      <div className="flex items-center justify-between">
+                        {/* Left side: Email info with checkbox */}
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={isGroupFullySelected(classes)}
+                            onChange={() => toggleGroupSelection(classes)}
+                            className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                            title="Chọn tất cả lớp trong nhóm"
+                          />
+                          <div className="p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
+                            <span className="text-2xl">📧</span>
                           </div>
-                          {sentTime && (
-                            <div className="flex items-center gap-1 mt-0.5 text-xs text-secondary-500">
-                              <Clock className="w-3 h-3" />
-                              <span>Gửi lúc: {format(new Date(sentTime), 'HH:mm dd/MM/yyyy')}</span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                               <span className="font-bold text-secondary-900 text-base">
+                                 {email}
+                               </span>
+                               <span className="px-2.5 py-1 rounded-full bg-blue-500 text-white text-xs font-bold shadow-sm">
+                                 {classes.length} lớp
+                               </span>
                             </div>
-                          )}
+                            {sentTime && (
+                              <div className="flex items-center gap-1 mt-0.5 text-xs text-secondary-500">
+                                <Clock className="w-3 h-3" />
+                                <span>Gửi lúc: {format(new Date(sentTime), 'HH:mm dd/MM/yyyy')}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
+
+                        {/* Right side: Bulk actions (only show when group is selected) */}
+                        {isGroupFullySelected(classes) && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-secondary-600 mr-2 font-medium">
+                              ✓ {classes.length} lớp được chọn
+                            </span>
+                            
+                            {/* Auto-assign all pending */}
+                            {classes.some(c => c.status === 'pending' && !c.assignedTeacherId) && (
+                              <button
+                                onClick={() => handleBulkAutoAssign(classes.filter(c => c.status === 'pending' && !c.assignedTeacherId).map(c => c._id))}
+                                className="px-3 py-1.5 bg-success-500 hover:bg-success-600 text-white text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+                                title="Tự động phân công tất cả lớp pending"
+                              >
+                                <Zap className="w-3.5 h-3.5" />
+                                Phân công tất cả
+                              </button>
+                            )}
+                            
+                            {/* Complete all assigned */}
+                            {classes.some(c => c.status === 'assigned') && (
+                              <button
+                                onClick={() => handleBulkComplete(classes.filter(c => c.status === 'assigned').map(c => c._id))}
+                                className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+                                title="Hoàn thành tất cả lớp assigned"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                Hoàn thành tất cả
+                              </button>
+                            )}
+                            
+                            {/* Cancel all */}
+                            {classes.some(c => c.status === 'pending' || c.status === 'assigned') && (
+                              <button
+                                onClick={() => handleBulkCancel(classes.filter(c => c.status === 'pending' || c.status === 'assigned').map(c => c._id))}
+                                className="px-3 py-1.5 bg-warning-500 hover:bg-warning-600 text-white text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+                                title="Hủy tất cả lớp"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                Hủy tất cả
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
+
 
                   {classes.map((offsetClass) => {
                     const isToday = new Date(offsetClass.scheduledDate).toDateString() === new Date().toDateString();
