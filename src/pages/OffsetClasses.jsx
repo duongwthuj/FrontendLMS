@@ -842,18 +842,23 @@ const OffsetClasses = () => {
                 
                 return (
                 <React.Fragment key={groupKey}>
-                  <tr className="bg-secondary-100/80 border-b border-secondary-200">
+                  {/* Spacing row for visual separation */}
+                  <tr className="h-4 bg-secondary-50">
+                    <td colSpan="6" className="border-b-4 border-secondary-300"></td>
+                  </tr>
+                  
+                  <tr className="bg-gradient-to-r from-secondary-200 to-secondary-100 border-y-2 border-secondary-300 shadow-sm">
                     <td colSpan="6" className="px-6 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white rounded-lg shadow-sm">
-                          <span className="text-xl">📧</span>
+                        <div className="p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
+                          <span className="text-2xl">📧</span>
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                             <span className="font-bold text-secondary-900 text-sm">
+                             <span className="font-bold text-secondary-900 text-base">
                                {email}
                              </span>
-                             <span className="px-2 py-0.5 rounded-full bg-secondary-200 text-secondary-700 text-xs font-medium">
+                             <span className="px-2.5 py-1 rounded-full bg-blue-500 text-white text-xs font-bold shadow-sm">
                                {classes.length} lớp
                              </span>
                           </div>
@@ -868,8 +873,18 @@ const OffsetClasses = () => {
                     </td>
                   </tr>
 
-                  {classes.map((offsetClass) => (
-                    <tr key={offsetClass._id} className="hover:bg-secondary-50 transition-colors">
+                  {classes.map((offsetClass) => {
+                    const isToday = new Date(offsetClass.scheduledDate).toDateString() === new Date().toDateString();
+                    const statusColors = {
+                      pending: 'border-l-4 border-l-yellow-400 bg-yellow-50/30',
+                      assigned: 'border-l-4 border-l-blue-500 bg-blue-50/30',
+                      completed: 'border-l-4 border-l-green-500 bg-green-50/30',
+                      cancelled: 'border-l-4 border-l-gray-400 bg-gray-50/30'
+                    };
+                    const pulseClass = isToday ? 'animate-pulse' : '';
+                    
+                    return (
+                    <tr key={offsetClass._id} className={`hover:bg-secondary-100 transition-all ${statusColors[offsetClass.status] || ''} ${pulseClass}`}>
                       <td className="px-6 py-4">
                         <div className="flex items-start gap-3">
                           <div className="flex-shrink-0">
@@ -1034,14 +1049,25 @@ const OffsetClasses = () => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </React.Fragment>
                 );
               })
             ) : (
               // Standard View
-              offsetClasses.map((offsetClass) => (
-                <tr key={offsetClass._id} className="hover:bg-secondary-50 transition-colors">
+              offsetClasses.map((offsetClass) => {
+                const isToday = new Date(offsetClass.scheduledDate).toDateString() === new Date().toDateString();
+                const statusColors = {
+                  pending: 'border-l-4 border-l-yellow-400 bg-yellow-50/30',
+                  assigned: 'border-l-4 border-l-blue-500 bg-blue-50/30',
+                  completed: 'border-l-4 border-l-green-500 bg-green-50/30',
+                  cancelled: 'border-l-4 border-l-gray-400 bg-gray-50/30'
+                };
+                const pulseClass = isToday ? 'animate-pulse' : '';
+                
+                return (
+                <tr key={offsetClass._id} className={`hover:bg-secondary-100 transition-all ${statusColors[offsetClass.status] || ''} ${pulseClass}`}>
                   <td className="px-6 py-4">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0">
@@ -1206,7 +1232,8 @@ const OffsetClasses = () => {
                     </div>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
             </tbody>
           </table>
