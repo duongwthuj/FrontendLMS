@@ -116,6 +116,10 @@ export const offsetClassesAPI = {
   // Status management
   markCompleted: (id) => api.patch(`/offset-classes/${id}/complete`),
   cancel: (id, reason) => api.patch(`/offset-classes/${id}/cancel`, { reason }),
+
+  // Bulk operations
+  bulkDelete: (classIds) => api.delete('/offset-classes/bulk', { data: { classIds } }),
+  bulkComplete: (classIds) => api.patch('/offset-classes/bulk/complete', { classIds }),
 };
 
 // Dashboard/Statistics API

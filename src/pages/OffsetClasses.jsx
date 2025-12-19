@@ -416,28 +416,41 @@ const OffsetClasses = () => {
       `Bạn có chắc muốn đánh dấu hoàn thành ${classIds.length} lớp?`,
       async () => {
         try {
-          let successCount = 0;
-          let failCount = 0;
-          
-          for (const id of classIds) {
-            try {
-              await offsetClassesAPI.markCompleted(id);
-              successCount++;
-            } catch (error) {
-              failCount++;
-              console.error(`Failed to complete ${id}:`, error);
-            }
-          }
+          const response = await offsetClassesAPI.bulkComplete(classIds);
           
           showNotification(
-            `Đã hoàn thành ${successCount} lớp${failCount > 0 ? `, ${failCount} lớp thất bại` : ''}`,
-            failCount === 0 ? 'success' : 'warning'
+            response.message || `Đã hoàn thành ${response.successCount} lớp${response.failCount > 0 ? `, ${response.failCount} lớp thất bại` : ''}`,
+            response.failCount === 0 ? 'success' : 'warning'
           );
           
           await loadData();
           setSelectedClasses(new Set());
         } catch (error) {
           showNotification('Có lỗi xảy ra khi hoàn thành hàng loạt', 'error');
+        }
+      }
+    );
+  };
+
+  // Bulk delete for selected classes
+  const handleBulkDelete = async (classIds) => {
+    if (classIds.length === 0) return;
+    
+    showConfirm(
+      `Bạn có chắc muốn xóa ${classIds.length} lớp? Hành động này không thể hoàn tác!`,
+      async () => {
+        try {
+          const response = await offsetClassesAPI.bulkDelete(classIds);
+          
+          showNotification(
+            response.message || `Đã xóa ${response.successCount} lớp${response.failCount > 0 ? `, ${response.failCount} lớp thất bại` : ''}`,
+            response.failCount === 0 ? 'success' : 'warning'
+          );
+          
+          await loadData();
+          setSelectedClasses(new Set());
+        } catch (error) {
+          showNotification('Có lỗi xảy ra khi xóa hàng loạt', 'error');
         }
       }
     );
@@ -1056,6 +1069,16 @@ const OffsetClasses = () => {
                                 Hủy tất cả
                               </button>
                             )}
+                            
+                            {/* Delete all */}
+                            <button
+                              onClick={() => handleBulkDelete(classes.map(c => c._id))}
+                              className="px-3 py-1.5 bg-danger-500 hover:bg-danger-600 text-white text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+                              title="Xóa tất cả lớp trong nhóm"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Xóa tất cả
+                            </button>
                           </div>
                         )}
                       </div>
