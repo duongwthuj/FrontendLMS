@@ -1026,11 +1026,11 @@ const OffsetClasses = () => {
                 <React.Fragment key={groupKey}>
                   {/* Spacing row for visual separation */}
                   <tr className="h-4 bg-secondary-50">
-                    <td colSpan="6" className="border-b-4 border-secondary-300"></td>
+                    <td colSpan="7" className="border-b-4 border-secondary-300"></td>
                   </tr>
                   
                   <tr className="bg-gradient-to-r from-secondary-200 to-secondary-100 border-y-2 border-secondary-300 shadow-sm">
-                    <td colSpan="6" className="px-6 py-3">
+                    <td colSpan="7" className="px-6 py-3">
                       <div className="flex items-center justify-between">
                         {/* Left side: Email info with checkbox */}
                         <div className="flex items-center gap-3">
@@ -1133,6 +1133,22 @@ const OffsetClasses = () => {
                     
                     return (
                     <tr key={offsetClass._id} className={`hover:bg-secondary-100 transition-all ${statusColors[offsetClass.status] || ''} ${pulseClass}`}>
+                      <td className="px-4 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedClasses.has(offsetClass._id)}
+                          onChange={(e) => {
+                            const newSelected = new Set(selectedClasses);
+                            if (e.target.checked) {
+                              newSelected.add(offsetClass._id);
+                            } else {
+                              newSelected.delete(offsetClass._id);
+                            }
+                            setSelectedClasses(newSelected);
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-start gap-3">
                           <div className="flex-shrink-0">
