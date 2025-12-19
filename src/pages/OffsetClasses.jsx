@@ -637,6 +637,26 @@ const OffsetClasses = () => {
           <p className="text-secondary-500 mt-1">Quản lý và phân công lớp bù</p>
         </div>
         <div className="flex items-center gap-3">
+          {selectedClasses.size > 0 && (
+            <>
+              <span className="text-sm text-secondary-600 font-medium">
+                {selectedClasses.size} lớp được chọn
+              </span>
+              <Button
+                variant="danger"
+                onClick={() => handleBulkDelete(Array.from(selectedClasses))}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Xóa đã chọn
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setSelectedClasses(new Set())}
+              >
+                Bỏ chọn tất cả
+              </Button>
+            </>
+          )}
           <Button
             onClick={() => setShowModal(true)}
           >
@@ -927,6 +947,21 @@ const OffsetClasses = () => {
           <table className="min-w-full divide-y divide-secondary-200">
             <thead className="bg-secondary-50">
               <tr>
+                <th className="px-4 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={offsetClasses.length > 0 && offsetClasses.every(oc => selectedClasses.has(oc._id))}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedClasses(new Set(offsetClasses.map(oc => oc._id)));
+                      } else {
+                        setSelectedClasses(new Set());
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                    title="Chọn tất cả"
+                  />
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-500 uppercase tracking-wider">
                   Thông tin lớp học
                 </th>
@@ -1281,6 +1316,22 @@ const OffsetClasses = () => {
                 
                 return (
                 <tr key={offsetClass._id} className={`hover:bg-secondary-100 transition-all ${statusColors[offsetClass.status] || ''} ${pulseClass}`}>
+                  <td className="px-4 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedClasses.has(offsetClass._id)}
+                      onChange={(e) => {
+                        const newSelected = new Set(selectedClasses);
+                        if (e.target.checked) {
+                          newSelected.add(offsetClass._id);
+                        } else {
+                          newSelected.delete(offsetClass._id);
+                        }
+                        setSelectedClasses(newSelected);
+                      }}
+                      className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                    />
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0">
