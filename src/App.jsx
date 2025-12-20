@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Teachers from './pages/Teachers';
+import Users from './pages/Users';
 import TeacherDetails from './pages/TeacherDetails';
 import Subjects from './pages/Subjects';
 import Schedule from './pages/Schedule';
@@ -35,6 +36,14 @@ function App() {
               </ProtectedRoute>
             } />
             
+            <Route path="/users" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <Layout>
+                  <Users />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
             <Route path="/teachers" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <Layout>

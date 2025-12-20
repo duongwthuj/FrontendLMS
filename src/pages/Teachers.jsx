@@ -42,10 +42,16 @@ const Teachers = () => {
     try {
       if (editingId) {
         await teachersAPI.update(editingId, formData);
+        setShowModal(false); // Only close modal immediately for updates
       } else {
-        await teachersAPI.create(formData);
+        const response = await teachersAPI.create(formData);
+        // Show account info if created
+        if (response.data?.account) {
+            alert(`Tạo giáo viên thành công!\n\nTài khoản đăng nhập:\nUsername: ${response.data.account.username}\nMật khẩu: ${response.data.account.password}\n\nVui lòng lưu lại thông tin này!`);
+        }
+        setShowModal(false);
       }
-      setShowModal(false);
+      
       setFormData({ name: '', email: '', phone: '', maxOffsetClasses: 5, status: 'active', role: 'fulltime' });
       setEditingId(null);
       loadTeachers();

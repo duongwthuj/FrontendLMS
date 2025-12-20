@@ -42,6 +42,14 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
 };
 
+// Admin API
+export const adminAPI = {
+  getAllUsers: () => api.get('/auth/users'),
+  createUser: (data) => api.post('/auth/users', data),
+  updateUser: (id, data) => api.put(`/auth/users/${id}`, data),
+  deleteUser: (id) => api.delete(`/auth/users/${id}`),
+};
+
 // Teachers API
 export const teachersAPI = {
   getAll: (params) => api.get('/teachers', { params }),

@@ -20,6 +20,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'st', 'user'] },
+    { path: '/users', icon: Users, label: 'Tài khoản', roles: ['admin'] },
     { path: '/teachers', icon: Users, label: 'Giáo viên', roles: ['admin'] },
     { path: '/subjects', icon: BookOpen, label: 'Môn học', roles: ['admin'] },
     { path: '/schedule', icon: Calendar, label: 'Lịch làm việc', roles: ['admin', 'st', 'user'] },
