@@ -657,58 +657,7 @@ const OffsetClasses = () => {
       </div>
 
       {/* Bulk Action Floating Bar - Much more prominent */}
-      {selectedClasses.size > 0 && (
-        <div className="sticky top-20 z-40 animate-slide-in">
-          <Card className="bg-primary-900 text-white border-none shadow-2xl py-3 px-6 rounded-2xl flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="bg-white/20 p-2 rounded-xl">
-                <CheckCircle className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="font-bold text-lg leading-none">
-                  {selectedClasses.size === offsetClasses.length ? 'Đã chọn tất cả' : `${selectedClasses.size} lớp được chọn`}
-                </p>
-                <p className="text-white/70 text-sm mt-1">Chọn tác vụ bạn muốn thực hiện cho các lớp này</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleBulkComplete(Array.from(selectedClasses))}
-                className="px-4 py-2.5 bg-success-500 hover:bg-success-600 text-white text-sm font-bold rounded-xl flex items-center gap-2 transition-all shadow-lg active:scale-95"
-              >
-                <Check className="w-4 h-4" />
-                Hoàn thành {selectedClasses.size === offsetClasses.length ? 'tất cả' : 'đã chọn'}
-              </button>
-              
-              <button
-                onClick={() => handleBulkCancel(Array.from(selectedClasses))}
-                className="px-4 py-2.5 bg-warning-500 hover:bg-warning-600 text-white text-sm font-bold rounded-xl flex items-center gap-2 transition-all shadow-lg active:scale-95"
-              >
-                <X className="w-4 h-4" />
-                Hủy {selectedClasses.size === offsetClasses.length ? 'tất cả' : 'đã chọn'}
-              </button>
 
-              <button
-                onClick={() => handleBulkDelete(Array.from(selectedClasses))}
-                className="px-4 py-2.5 bg-danger-500 hover:bg-danger-600 text-white text-sm font-bold rounded-xl flex items-center gap-2 transition-all shadow-lg active:scale-95"
-              >
-                <Trash2 className="w-4 h-4" />
-                Xóa {selectedClasses.size === offsetClasses.length ? 'tất cả' : 'đã chọn'}
-              </button>
-              
-              <div className="h-8 w-px bg-white/20 mx-2"></div>
-              
-              <button
-                onClick={() => setSelectedClasses(new Set())}
-                className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white text-sm font-bold rounded-xl transition-all"
-              >
-                Bỏ chọn
-              </button>
-            </div>
-          </Card>
-        </div>
-      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
