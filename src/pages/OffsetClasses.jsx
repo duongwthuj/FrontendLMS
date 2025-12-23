@@ -351,7 +351,8 @@ const OffsetClasses = () => {
     const classIds = classes.map(c => c._id);
     const newSelected = new Set(selectedClasses);
     
-    // Check if all are selected
+    // Placeholder to ensure I read the file first before replacing blindly.
+// I will use `view_file` to find the Action Menu part.
     const allSelected = classIds.every(id => newSelected.has(id));
     
     if (allSelected) {
@@ -498,12 +499,14 @@ const OffsetClasses = () => {
       assigned: 'primary',
       completed: 'success',
       cancelled: 'danger',
+      rejected: 'neutral', // or a specific variant for rejected
     };
     const labels = {
       pending: 'Chờ xử lý',
       assigned: 'Đã phân công',
       completed: 'Hoàn thành',
       cancelled: 'Đã hủy',
+      rejected: 'Đã từ chối',
     };
     
     return (
@@ -790,7 +793,8 @@ const OffsetClasses = () => {
               { key: 'pending', label: 'Chờ xử lý' },
               { key: 'assigned', label: 'Đã phân công' },
               { key: 'completed', label: 'Hoàn thành' },
-              { key: 'cancelled', label: 'Đã hủy' }
+              { key: 'cancelled', label: 'Đã hủy' },
+              { key: 'rejected', label: 'Đã từ chối' }
             ].map((status) => (
               <button
                 key={status.key}
@@ -1224,7 +1228,7 @@ const OffsetClasses = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-1">
                           {/* Edit */}
-                          {(offsetClass.status === 'pending' || offsetClass.status === 'assigned' || offsetClass.status === 'completed') && (
+                          {(offsetClass.status === 'pending' || offsetClass.status === 'assigned' || offsetClass.status === 'completed' || offsetClass.status === 'rejected') && (
                             <button
                               onClick={() => handleEdit(offsetClass)}
                               className="p-1.5 text-secondary-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
@@ -1242,6 +1246,17 @@ const OffsetClasses = () => {
                               title="Tự động phân công"
                             >
                               <Zap className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {/* Rejected Actions: Move back to pending */}
+                          {offsetClass.status === 'rejected' && (
+                            <button
+                              onClick={() => handleRevertToPending(offsetClass._id)}
+                              className="p-1.5 text-secondary-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              title="Đưa vào chờ xử lý"
+                            >
+                              <RotateCcw className="w-4 h-4" />
                             </button>
                           )}
                           
@@ -1284,7 +1299,7 @@ const OffsetClasses = () => {
                           )}
                           
                           {/* Delete */}
-                          {(offsetClass.status === 'cancelled' || offsetClass.status === 'completed') && (
+                          {(offsetClass.status === 'cancelled' || offsetClass.status === 'completed' || offsetClass.status === 'rejected') && (
                             <button
                               onClick={() => handleDelete(offsetClass._id)}
                               className="p-1.5 text-secondary-500 hover:text-danger-600 hover:bg-danger-50 rounded transition-colors"
@@ -1423,7 +1438,7 @@ const OffsetClasses = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="flex items-center justify-end gap-1">
                       {/* Edit */}
-                      {(offsetClass.status === 'pending' || offsetClass.status === 'assigned' || offsetClass.status === 'completed') && (
+                      {(offsetClass.status === 'pending' || offsetClass.status === 'assigned' || offsetClass.status === 'completed' || offsetClass.status === 'rejected') && (
                         <button
                           onClick={() => handleEdit(offsetClass)}
                           className="p-1.5 text-secondary-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
@@ -1441,6 +1456,17 @@ const OffsetClasses = () => {
                           title="Tự động phân công"
                         >
                           <Zap className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      {/* Rejected Actions: Move back to pending */}
+                      {offsetClass.status === 'rejected' && (
+                        <button
+                          onClick={() => handleRevertToPending(offsetClass._id)}
+                          className="p-1.5 text-secondary-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          title="Đưa vào chờ xử lý"
+                        >
+                          <RotateCcw className="w-4 h-4" />
                         </button>
                       )}
                       
@@ -1483,7 +1509,7 @@ const OffsetClasses = () => {
                       )}
                       
                       {/* Delete */}
-                      {(offsetClass.status === 'cancelled' || offsetClass.status === 'completed') && (
+                      {(offsetClass.status === 'cancelled' || offsetClass.status === 'completed' || offsetClass.status === 'rejected') && (
                         <button
                           onClick={() => handleDelete(offsetClass._id)}
                           className="p-1.5 text-secondary-500 hover:text-danger-600 hover:bg-danger-50 rounded transition-colors"
