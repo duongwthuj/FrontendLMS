@@ -24,6 +24,7 @@ const OffsetClasses = () => {
     meetingLink: '',
     notes: '',
     assignedTeacherId: '',
+    externalTeacher: { name: '', email: '' }
   });
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterTeacher, setFilterTeacher] = useState('');
@@ -47,6 +48,7 @@ const OffsetClasses = () => {
   const [syncing, setSyncing] = useState(false);
   const [groupByEmail, setGroupByEmail] = useState(false);
   const [selectedClasses, setSelectedClasses] = useState(new Set());
+  const [isExternalTeacher, setIsExternalTeacher] = useState(false);
 
   // Auto hide notification after 5 seconds
   useEffect(() => {
@@ -120,55 +122,7 @@ const OffsetClasses = () => {
     }
   };
 
-  const handleSubmitWithAutoAssignment = async (e) => {
-    e.preventDefault();
-    try {
-      setAutoAssigning(true);
-      
-      if (editingId) {
-        const updateData = { ...formData };
-        if (!updateData.assignedTeacherId || updateData.assignedTeacherId === '') {
-          updateData.assignedTeacherId = null;
-          updateData.status = 'pending';
-        } else {
-          updateData.status = 'assigned';
-        }
-        
-        await offsetClassesAPI.update(editingId, updateData);
-        showNotification('Lớp offset đã được cập nhật thành công!', 'success');
-      } else {
-        const createData = { ...formData };
-        if (!createData.assignedTeacherId || createData.assignedTeacherId === '') {
-          createData.assignedTeacherId = null;
-          delete createData.assignedTeacherId;
-          
-          const response = await offsetClassesAPI.createWithAssignment(createData);
 
-          if (response.autoAssigned) {
-            showNotification('Lớp offset đã được tạo và tự động phân công giáo viên thành công!', 'success');
-          } else {
-            showNotification('Lớp offset đã được tạo nhưng không tìm thấy giáo viên phù hợp. Vui lòng kiểm tra lại thời gian hoặc phân công thủ công.', 'warning');
-          }
-        } else {
-          createData.status = 'assigned';
-          const response = await offsetClassesAPI.create(createData);
-          showNotification('Lớp offset đã được tạo và phân công giáo viên thành công!', 'success');
-        }
-      }
-
-      handleCloseModal();
-      loadData();
-    } catch (error) {
-      console.error('Error saving offset class:', error);
-      if (error.message.includes('No suitable teacher found')) {
-        showNotification('Không tìm thấy giáo viên phù hợp! Vui lòng kiểm tra lại thời gian hoặc phân công thủ công.', 'error');
-      } else {
-        showNotification(`Có lỗi xảy ra: ${error.message}`, 'error');
-      }
-    } finally {
-      setAutoAssigning(false);
-    }
-  };
 
   const handleAutoAssign = async (id) => {
     showConfirm('Bạn có muốn tự động phân công giáo viên cho lớp này?', async () => {
@@ -286,20 +240,27 @@ const OffsetClasses = () => {
   };
 
   const handleEdit = (offsetClass) => {
-    setEditingId(offsetClass._id);
-    setActiveSubjectId(offsetClass.subjectLevelId?.subjectId?._id || '');
-    setFormData({
-      subjectLevelId: offsetClass.subjectLevelId?._id || '',
-      className: offsetClass.className || '',
-      scheduledDate: format(new Date(offsetClass.scheduledDate), 'yyyy-MM-dd'),
-      startTime: offsetClass.startTime || '',
-      endTime: offsetClass.endTime || '',
-      reason: offsetClass.reason || '',
-      meetingLink: offsetClass.meetingLink || '',
-      notes: offsetClass.notes || '',
-      assignedTeacherId: offsetClass.assignedTeacherId?._id || '',
-    });
-    setShowModal(true);
+    if (offsetClass) {
+      setEditingId(offsetClass._id);
+      setActiveSubjectId(offsetClass.subjectLevelId?.subjectId?._id || '');
+      
+      const isExternal = !offsetClass.assignedTeacherId && !!offsetClass.externalTeacher?.name;
+      setIsExternalTeacher(isExternal);
+
+      setFormData({
+        className: offsetClass.className || '',
+        subjectLevelId: offsetClass.subjectLevelId?._id || '',
+        scheduledDate: offsetClass.scheduledDate ? format(new Date(offsetClass.scheduledDate), 'yyyy-MM-dd') : '',
+        startTime: offsetClass.startTime || '',
+        endTime: offsetClass.endTime || '',
+        reason: offsetClass.reason || '',
+        meetingLink: offsetClass.meetingLink || '',
+        notes: offsetClass.notes || '',
+        assignedTeacherId: offsetClass.assignedTeacherId?._id || '',
+        externalTeacher: offsetClass.externalTeacher || { name: '', email: '' }
+      });
+      setShowModal(true);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -318,6 +279,7 @@ const OffsetClasses = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingId(null);
+    setIsExternalTeacher(false);
     setFormData({
       subjectLevelId: '',
       className: '',
@@ -328,6 +290,7 @@ const OffsetClasses = () => {
       meetingLink: '',
       notes: '',
       assignedTeacherId: '',
+      externalTeacher: { name: '', email: '' }
     });
   };
 
@@ -343,6 +306,51 @@ const OffsetClasses = () => {
       showNotification(`Lỗi đồng bộ: ${error.message}`, 'error');
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleSubmitWithAutoAssignment = async (e) => {
+    e.preventDefault();
+    try {
+      setAutoAssigning(true);
+
+      const payload = { ...formData };
+      
+      if (isExternalTeacher) {
+          if (!payload.externalTeacher.name || !payload.externalTeacher.email) {
+              showNotification('Vui lòng nhập tên và email giáo viên ngoài', 'error');
+              setAutoAssigning(false);
+              return;
+          }
+          payload.assignedTeacherId = null; 
+      } else {
+          payload.externalTeacher = undefined;
+          if (!payload.assignedTeacherId) payload.assignedTeacherId = undefined; 
+      }
+
+      if (editingId) {
+        await offsetClassesAPI.update(editingId, payload);
+        showNotification('Cập nhật thành công', 'success');
+      } else {
+        const res = await api.post('/offset-classes/create-assigned', payload);
+        
+        if (res.data.autoAssigned) {
+          showNotification('Đã tạo và tự động phân công!', 'success');
+        } else if (payload.externalTeacher) {
+           showNotification('Đã tạo và phân công giáo viên ngoài!', 'success');
+        } else if (payload.assignedTeacherId) {
+          showNotification('Đã tạo và phân công giáo viên!', 'success');
+        } else {
+          showNotification('Đã tạo lớp (chưa tìm được GV phù hợp)', 'warning');
+        }
+      }
+      setShowModal(false);
+      loadData();
+    } catch (error) {
+      console.error('Error saving offset class:', error);
+      showNotification(`Lỗi: ${error.message}`, 'error');
+    } finally {
+      setAutoAssigning(false);
     }
   };
 
@@ -1400,19 +1408,19 @@ const OffsetClasses = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    {offsetClass.assignedTeacherId ? (
+                    {offsetClass.assignedTeacherId || offsetClass.externalTeacher ? (
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 border border-white shadow-sm">
                           <span className="text-primary-700 text-xs font-bold">
-                            {offsetClass.assignedTeacherId.name?.charAt(0)}
+                            {offsetClass.assignedTeacherId?.name?.charAt(0) || offsetClass.externalTeacher?.name?.charAt(0) || '?'}
                           </span>
                         </div>
                         <div className="min-w-0">
                           <div className="text-sm font-medium text-secondary-900 truncate">
-                            {offsetClass.assignedTeacherId.name}
+                            {offsetClass.assignedTeacherId?.name || offsetClass.externalTeacher?.name || 'Không rõ'}
                           </div>
                           <div className="text-xs text-secondary-500 truncate">
-                            {offsetClass.assignedTeacherId.email}
+                            {offsetClass.assignedTeacherId?.email || offsetClass.externalTeacher?.email || ''}
                           </div>
                         </div>
                       </div>
@@ -1754,23 +1762,76 @@ const OffsetClasses = () => {
                     <label className="block text-sm font-medium text-secondary-700 mb-1">
                       Phân công giáo viên
                     </label>
-                    <div className="space-y-2">
+                    <div className="space-y-4">
+                      
                       <select
-                        value={formData.assignedTeacherId || ''}
-                        onChange={(e) => setFormData({ ...formData, assignedTeacherId: e.target.value })}
+                        value={isExternalTeacher ? 'external' : (formData.assignedTeacherId || '')}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === 'external') {
+                            setIsExternalTeacher(true);
+                            setFormData({ ...formData, assignedTeacherId: '' });
+                          } else {
+                            setIsExternalTeacher(false);
+                            setFormData({ ...formData, assignedTeacherId: val });
+                          }
+                        }}
                         className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
                       >
                         <option value="">🤖 Tự động phân công (khuyến nghị)</option>
+                        <option value="external">👤 Giáo viên ngoài (Nhập tay)</option>
+                        <optgroup label="Giáo viên trong hệ thống">
                         {teachers.map((teacher) => (
                           <option key={teacher._id} value={teacher._id}>
                             👨‍🏫 {teacher.name}
                           </option>
                         ))}
+                        </optgroup>
                       </select>
-                      <p className="text-xs text-primary-600 flex items-center gap-1">
-                        <Info className="w-3 h-3" />
-                        Hệ thống sẽ tự động chọn giáo viên phù hợp nhất nếu để trống
-                      </p>
+
+                      {/* External Teacher Inputs */}
+                       {isExternalTeacher && (
+                        <div className="p-4 bg-gray-50 border border-secondary-200 rounded-lg space-y-3 animate-fade-in">
+                          <h4 className="text-sm font-bold text-secondary-800 border-b border-secondary-200 pb-2">
+                             Thông tin giáo viên ngoài
+                          </h4>
+                          <div>
+                            <label className="block text-xs font-semibold text-secondary-600 mb-1">Họ và tên <span className="text-red-500">*</span></label>
+                            <input 
+                              type="text" 
+                              required={isExternalTeacher}
+                              value={formData.externalTeacher?.name || ''}
+                              onChange={(e) => setFormData({ 
+                                ...formData, 
+                                externalTeacher: { ...formData.externalTeacher, name: e.target.value } 
+                              })}
+                              className="w-full px-3 py-2 border border-secondary-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              placeholder="Nhập tên giáo viên"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-secondary-600 mb-1">Email <span className="text-red-500">*</span></label>
+                            <input 
+                              type="email" 
+                              required={isExternalTeacher}
+                              value={formData.externalTeacher?.email || ''}
+                              onChange={(e) => setFormData({ 
+                                ...formData, 
+                                externalTeacher: { ...formData.externalTeacher, email: e.target.value } 
+                              })}
+                              className="w-full px-3 py-2 border border-secondary-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              placeholder="Nhập email giáo viên"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {!isExternalTeacher && (
+                        <p className="text-xs text-primary-600 flex items-center gap-1">
+                          <Info className="w-3 h-3" />
+                          Hệ thống sẽ tự động chọn giáo viên phù hợp nhất nếu để trống
+                        </p>
+                      )}
                     </div>
                   </div>
 

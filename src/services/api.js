@@ -222,6 +222,11 @@ export const testClassesAPI = {
   reallocate: (id) => api.post(`/test-classes/${id}/reallocate`),
   markCompleted: (id) => api.patch(`/test-classes/${id}/complete`),
   cancel: (id, reason) => api.patch(`/test-classes/${id}/cancel`, { reason }),
+
+  // Bulk operations
+  bulkDelete: (classIds) => api.delete('/test-classes/bulk', { data: { classIds } }),
+  bulkComplete: (classIds) => api.patch('/test-classes/bulk/complete', { classIds }),
+  bulkAutoAssign: (classIds) => api.post('/test-classes/bulk/auto-assign', { classIds }),
 };
 
 export default api;

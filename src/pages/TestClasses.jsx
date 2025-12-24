@@ -41,6 +41,7 @@ const TestClasses = () => {
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showAll, setShowAll] = useState(true);
   /* const [activeSubjectId, setActiveSubjectId] = useState(''); */ // Removed activeSubjectId
+  const [selectedClasses, setSelectedClasses] = useState(new Set());
 
   // Auto hide notification after 5 seconds
   useEffect(() => {
@@ -248,6 +249,78 @@ const TestClasses = () => {
         loadData();
       } catch (error) {
         console.error('Error deleting:', error);
+        showNotification(`Có lỗi xảy ra: ${error.message}`, 'error');
+      }
+    });
+  };
+
+  // Bulk Actions
+  const toggleSelection = (id) => {
+    const newSelected = new Set(selectedClasses);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedClasses(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedClasses.size === testClasses.length && testClasses.length > 0) {
+      setSelectedClasses(new Set());
+    } else {
+      setSelectedClasses(new Set(testClasses.map(c => c._id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedClasses.size === 0) return;
+    
+    showConfirm(`Bạn có chắc chắn muốn xóa ${selectedClasses.size} lớp đã chọn?`, async () => {
+      try {
+        await testClassesAPI.bulkDelete(Array.from(selectedClasses));
+        showNotification(`Đã xóa ${selectedClasses.size} lớp thành công!`, 'success');
+        setSelectedClasses(new Set());
+        loadData();
+      } catch (error) {
+        console.error('Error bulk deleting:', error);
+        showNotification(`Có lỗi xảy ra: ${error.message}`, 'error');
+      }
+    });
+  };
+
+  const handleBulkComplete = async () => {
+    if (selectedClasses.size === 0) return;
+    
+    showConfirm(`Bạn có chắc chắn muốn hoàn thành ${selectedClasses.size} lớp đã chọn?`, async () => {
+      try {
+        await testClassesAPI.bulkComplete(Array.from(selectedClasses));
+        showNotification(`Đã hoàn thành ${selectedClasses.size} lớp thành công!`, 'success');
+        setSelectedClasses(new Set());
+        loadData();
+      } catch (error) {
+        console.error('Error bulk completing:', error);
+        showNotification(`Có lỗi xảy ra: ${error.message}`, 'error');
+      }
+    });
+  };
+
+  const handleBulkAutoAssign = async () => {
+    if (selectedClasses.size === 0) return;
+
+    showConfirm(`Hệ thống sẽ tự động tìm giáo viên cho ${selectedClasses.size} lớp đã chọn. Tiếp tục?`, async () => {
+      try {
+        const res = await testClassesAPI.bulkAutoAssign(Array.from(selectedClasses));
+        const { successCount, failCount } = res.data;
+        
+        let msg = `Đã phân công thành công ${successCount} lớp`;
+        if (failCount > 0) msg += `, thất bại ${failCount} lớp (không tìm thấy GV)`;
+        
+        showNotification(msg, failCount > 0 ? 'warning' : 'success');
+        setSelectedClasses(new Set());
+        loadData();
+      } catch (error) {
+        console.error('Error bulk auto-assigning:', error);
         showNotification(`Có lỗi xảy ra: ${error.message}`, 'error');
       }
     });
@@ -546,6 +619,14 @@ const TestClasses = () => {
           <table className="min-w-full divide-y divide-secondary-200">
             <thead className="bg-secondary-50">
               <tr>
+                <th className="px-6 py-3 text-left">
+                  <input 
+                    type="checkbox" 
+                    checked={testClasses.length > 0 && selectedClasses.size === testClasses.length}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                  />
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-500 uppercase tracking-wider">
                   Thông tin lớp học
                 </th>
@@ -568,7 +649,15 @@ const TestClasses = () => {
             </thead>
             <tbody className="bg-white divide-y divide-secondary-200">
             {testClasses.map((suppClass) => (
-              <tr key={suppClass._id} className="hover:bg-secondary-50 transition-colors">
+              <tr key={suppClass._id} className={`hover:bg-secondary-50 transition-colors ${selectedClasses.has(suppClass._id) ? 'bg-primary-50' : ''}`}>
+                <td className="px-6 py-4">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedClasses.has(suppClass._id)}
+                    onChange={() => toggleSelection(suppClass._id)}
+                    className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                  />
+                </td>
                 <td className="px-6 py-4">
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0">
@@ -739,6 +828,57 @@ const TestClasses = () => {
           )}
         </div>
       </Card>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedClasses.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-full shadow-2xl border border-secondary-200 p-2 pl-6 pr-2 flex items-center gap-6 z-40 animate-slide-up">
+          <div className="flex items-center gap-2">
+            <span className="bg-secondary-900 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              {selectedClasses.size}
+            </span>
+            <span className="text-sm font-medium text-secondary-600">Lớp được chọn</span>
+          </div>
+          
+          <div className="h-4 w-px bg-secondary-300"></div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBulkAutoAssign}
+              className="p-2 hover:bg-success-50 text-success-600 rounded-full transition-colors flex items-center gap-2 group"
+              title="Phân công tự động"
+            >
+              <Zap className="w-5 h-5" />
+              <span className="sr-only group-hover:not-sr-only text-sm font-medium pr-1">Phân công</span>
+            </button>
+            
+            <button
+              onClick={handleBulkComplete}
+              className="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition-colors flex items-center gap-2 group"
+              title="Đánh dấu hoàn thành"
+            >
+              <CheckCircle className="w-5 h-5" />
+              <span className="sr-only group-hover:not-sr-only text-sm font-medium pr-1">Hoàn thành</span>
+            </button>
+            
+            <button
+              onClick={handleBulkDelete}
+              className="p-2 hover:bg-danger-50 text-danger-600 rounded-full transition-colors flex items-center gap-2 group"
+              title="Xóa"
+            >
+              <Trash2 className="w-5 h-5" />
+              <span className="sr-only group-hover:not-sr-only text-sm font-medium pr-1">Xóa</span>
+            </button>
+            
+            <button
+              onClick={() => setSelectedClasses(new Set())}
+              className="p-2 hover:bg-secondary-100 text-secondary-500 rounded-full transition-colors"
+              title="Hủy chọn"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal */}
       {showModal && (
