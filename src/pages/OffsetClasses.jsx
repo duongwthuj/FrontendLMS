@@ -1408,7 +1408,7 @@ const OffsetClasses = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    {offsetClass.assignedTeacherId || offsetClass.externalTeacher ? (
+                    {offsetClass.assignedTeacherId || offsetClass.externalTeacher?.name ? (
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 border border-white shadow-sm">
                           <span className="text-primary-700 text-xs font-bold">
