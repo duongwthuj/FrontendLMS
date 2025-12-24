@@ -1404,6 +1404,8 @@ const OffsetClasses = () => {
                       <div className="flex items-center text-sm text-secondary-600">
                         <Clock className="w-4 h-4 mr-2 text-secondary-400" />
                         {offsetClass.startTime} - {offsetClass.endTime}
+                        {/* DEBUG LOG */}
+                        {console.log('Row Data:', offsetClass._id, offsetClass.externalTeacher, offsetClass.assignedTeacherId)}
                       </div>
                     </div>
                   </td>
