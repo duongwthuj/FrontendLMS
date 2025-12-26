@@ -942,19 +942,18 @@ const OffsetClasses = () => {
           <table className="min-w-full divide-y divide-secondary-200">
             <thead className="bg-secondary-50">
               <tr>
-                <th className="px-4 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    checked={offsetClasses.length > 0 && offsetClasses.every(oc => selectedClasses.has(oc._id))}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedClasses(new Set(offsetClasses.map(oc => oc._id)));
-                      } else {
+                <th className="px-6 py-3 text-left">
+                  <input 
+                    type="checkbox" 
+                    checked={offsetClasses.length > 0 && selectedClasses.size === offsetClasses.length}
+                    onChange={() => {
+                      if (selectedClasses.size === offsetClasses.length && offsetClasses.length > 0) {
                         setSelectedClasses(new Set());
+                      } else {
+                        setSelectedClasses(new Set(offsetClasses.map(oc => oc._id)));
                       }
                     }}
                     className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
-                    title="Chọn tất cả"
                   />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-500 uppercase tracking-wider">
@@ -1128,16 +1127,16 @@ const OffsetClasses = () => {
                     
                     return (
                     <tr key={offsetClass._id} className={`hover:bg-secondary-100 transition-all ${statusColors[offsetClass.status] || ''} ${pulseClass}`}>
-                      <td className="px-4 py-4">
-                        <input
-                          type="checkbox"
+                      <td className="px-6 py-4">
+                        <input 
+                          type="checkbox" 
                           checked={selectedClasses.has(offsetClass._id)}
-                          onChange={(e) => {
+                          onChange={() => {
                             const newSelected = new Set(selectedClasses);
-                            if (e.target.checked) {
-                              newSelected.add(offsetClass._id);
-                            } else {
+                            if (newSelected.has(offsetClass._id)) {
                               newSelected.delete(offsetClass._id);
+                            } else {
+                              newSelected.add(offsetClass._id);
                             }
                             setSelectedClasses(newSelected);
                           }}
