@@ -21,6 +21,8 @@ const Teachers = () => {
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+const [activeTab, setActiveTab] = useState('fulltime');
+
   useEffect(() => {
     loadTeachers();
   }, []);
@@ -104,10 +106,12 @@ const Teachers = () => {
     );
   };
 
-  const filteredTeachers = teachers.filter(teacher => 
-    teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    teacher.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTeachers = teachers.filter(teacher => {
+    const matchesSearch = teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      teacher.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTab = teacher.role === activeTab;
+    return matchesSearch && matchesTab;
+  });
 
   if (loading) {
     return (
@@ -126,7 +130,7 @@ const Teachers = () => {
         </div>
         <Button
           onClick={() => {
-            setFormData({ name: '', email: '', phone: '', maxOffsetClasses: 5, status: 'active', role: 'fulltime' });
+            setFormData({ name: '', email: '', phone: '', maxOffsetClasses: 5, status: 'active', role: activeTab });
             setEditingId(null);
             setShowModal(true);
           }}
@@ -134,6 +138,34 @@ const Teachers = () => {
           <Plus className="w-5 h-5 mr-2" />
           Thêm giáo viên
         </Button>
+      </div>
+
+       {/* Tabs */}
+       <div className="border-b border-secondary-200">
+        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+          <button
+            onClick={() => setActiveTab('fulltime')}
+            className={`
+              whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
+              ${activeTab === 'fulltime'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-secondary-500 hover:text-secondary-700 hover:border-secondary-300'}
+            `}
+          >
+            Giáo viên Full-time
+          </button>
+          <button
+            onClick={() => setActiveTab('parttime')}
+            className={`
+              whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
+              ${activeTab === 'parttime'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-secondary-500 hover:text-secondary-700 hover:border-secondary-300'}
+            `}
+          >
+            Giáo viên Part-time
+          </button>
+        </nav>
       </div>
 
       <Card noPadding className="overflow-hidden">
@@ -174,7 +206,7 @@ const Teachers = () => {
                    Số lớp offset tối đa
                  </th>
                  <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-500 uppercase tracking-wider">
-                   Vai trò
+                   Số lớp cố định hiện tại
                  </th>
                  <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-500 uppercase tracking-wider">
                    Trạng thái
@@ -220,12 +252,8 @@ const Teachers = () => {
                     </span>
                    </td>
                    <td className="px-6 py-4 whitespace-nowrap">
-                     <span className={`text-sm font-medium px-2 py-1 rounded-md ${
-                       teacher.role === 'fulltime' 
-                         ? 'bg-blue-100 text-blue-700' 
-                         : 'bg-purple-100 text-purple-700'
-                     }`}>
-                       {teacher.role === 'parttime' ? 'Part-time' : 'Full-time'}
+                     <span className="text-sm font-medium text-secondary-900 bg-green-100 px-2 py-1 rounded-md">
+                       {teacher.fixedScheduleCount || 0} lớp
                      </span>
                    </td>
                    <td className="px-6 py-4 whitespace-nowrap">
