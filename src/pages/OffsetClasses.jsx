@@ -1103,61 +1103,6 @@ const OffsetClasses = () => {
                             )}
                           </div>
                         </div>
-
-                        {/* Right side: Bulk actions (only show when group is selected) */}
-                        {isGroupFullySelected(classes) && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-secondary-600 mr-2 font-medium">
-                              ✓ {classes.length} lớp được chọn
-                            </span>
-                            
-                            {/* Auto-assign all pending */}
-                            {classes.some(c => c.status === 'pending' && !c.assignedTeacherId) && (
-                              <button
-                                onClick={() => handleBulkAutoAssign(classes.filter(c => c.status === 'pending' && !c.assignedTeacherId).map(c => c._id))}
-                                className="px-3 py-1.5 bg-success-500 hover:bg-success-600 text-white text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
-                                title="Tự động phân công tất cả lớp pending"
-                              >
-                                <Zap className="w-3.5 h-3.5" />
-                                Phân công tất cả
-                              </button>
-                            )}
-                            
-                            {/* Complete all assigned */}
-                            {classes.some(c => c.status === 'assigned') && (
-                              <button
-                                onClick={() => handleBulkComplete(classes.filter(c => c.status === 'assigned').map(c => c._id))}
-                                className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
-                                title="Hoàn thành tất cả lớp assigned"
-                              >
-                                <Check className="w-3.5 h-3.5" />
-                                Hoàn thành tất cả
-                              </button>
-                            )}
-                            
-                            {/* Cancel all */}
-                            {classes.some(c => c.status === 'pending' || c.status === 'assigned') && (
-                              <button
-                                onClick={() => handleBulkCancel(classes.filter(c => c.status === 'pending' || c.status === 'assigned').map(c => c._id))}
-                                className="px-3 py-1.5 bg-warning-500 hover:bg-warning-600 text-white text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
-                                title="Hủy tất cả lớp"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                                Hủy tất cả
-                              </button>
-                            )}
-                            
-                            {/* Delete all */}
-                            <button
-                              onClick={() => handleBulkDelete(classes.map(c => c._id))}
-                              className="px-3 py-1.5 bg-danger-500 hover:bg-danger-600 text-white text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
-                              title="Xóa tất cả lớp trong nhóm"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              Xóa tất cả
-                            </button>
-                          </div>
-                        )}
                       </div>
                     </td>
                   </tr>
