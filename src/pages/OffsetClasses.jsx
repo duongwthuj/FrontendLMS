@@ -667,8 +667,56 @@ const OffsetClasses = () => {
         </div>
       </div>
 
-      {/* Bulk Action Floating Bar - Much more prominent */}
-
+      {/* Floating Bulk Action Bar */}
+      {selectedClasses.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-full shadow-2xl border border-secondary-200 p-2 pl-6 pr-2 flex items-center gap-6 z-40 animate-slide-up">
+          <div className="flex items-center gap-2">
+            <span className="bg-secondary-900 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              {selectedClasses.size}
+            </span>
+            <span className="text-sm font-medium text-secondary-600">Lớp được chọn</span>
+          </div>
+          
+          <div className="h-4 w-px bg-secondary-300"></div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleBulkAutoAssign(Array.from(selectedClasses))}
+              className="p-2 hover:bg-success-50 text-success-600 rounded-full transition-colors flex items-center gap-2 group"
+              title="Phân công tự động"
+            >
+              <Zap className="w-5 h-5" />
+              <span className="sr-only group-hover:not-sr-only text-sm font-medium pr-1">Phân công</span>
+            </button>
+            
+            <button
+              onClick={() => handleBulkComplete(Array.from(selectedClasses))}
+              className="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition-colors flex items-center gap-2 group"
+              title="Đánh dấu hoàn thành"
+            >
+              <CheckCircle className="w-5 h-5" />
+              <span className="sr-only group-hover:not-sr-only text-sm font-medium pr-1">Hoàn thành</span>
+            </button>
+            
+            <button
+              onClick={() => handleBulkDelete(Array.from(selectedClasses))}
+              className="p-2 hover:bg-danger-50 text-danger-600 rounded-full transition-colors flex items-center gap-2 group"
+              title="Xóa"
+            >
+              <Trash2 className="w-5 h-5" />
+              <span className="sr-only group-hover:not-sr-only text-sm font-medium pr-1">Xóa</span>
+            </button>
+            
+            <button
+              onClick={() => setSelectedClasses(new Set())}
+              className="p-2 hover:bg-secondary-100 text-secondary-500 rounded-full transition-colors"
+              title="Hủy chọn"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
