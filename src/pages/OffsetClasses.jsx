@@ -214,6 +214,41 @@ const OffsetClasses = () => {
     });
   };
 
+  const handleBulkRevert = async (classIds) => {
+    if (classIds.length === 0) return;
+    
+    showConfirm(
+      `Bạn có chắc muốn đưa ${classIds.length} lớp về trạng thái chờ xử lý?`,
+      async () => {
+        try {
+          let successCount = 0;
+          let failCount = 0;
+          
+          for (const id of classIds) {
+            try {
+              await offsetClassesAPI.revertToPending(id);
+              successCount++;
+            } catch (error) {
+              failCount++;
+              console.error(`Failed to revert ${id}:`, error);
+            }
+          }
+          
+          showNotification(
+            `Đã rollback ${successCount} lớp thành công${failCount > 0 ? `, ${failCount} lớp thất bại` : ''}`,
+            failCount === 0 ? 'success' : 'warning'
+          );
+          
+          await loadData();
+          setSelectedClasses(new Set());
+        } catch (error) {
+          showNotification('Có lỗi xảy ra khi rollback hàng loạt', 'error');
+        }
+      }
+    );
+  };
+
+
   const handleMarkCompleted = async (id) => {
     try {
       await offsetClassesAPI.markCompleted(id);
@@ -332,9 +367,9 @@ const OffsetClasses = () => {
         await offsetClassesAPI.update(editingId, payload);
         showNotification('Cập nhật thành công', 'success');
       } else {
-        const res = await api.post('/offset-classes/create-assigned', payload);
+        const res = await offsetClassesAPI.createWithAssignment(payload);
         
-        if (res.data.autoAssigned) {
+        if (res.autoAssigned) {
           showNotification('Đã tạo và tự động phân công!', 'success');
         } else if (payload.externalTeacher) {
            showNotification('Đã tạo và phân công giáo viên ngoài!', 'success');
@@ -680,24 +715,51 @@ const OffsetClasses = () => {
           <div className="h-4 w-px bg-secondary-300"></div>
           
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleBulkAutoAssign(Array.from(selectedClasses))}
-              className="p-2 hover:bg-success-50 text-success-600 rounded-full transition-colors flex items-center gap-2 group"
-              title="Phân công tự động"
-            >
-              <Zap className="w-5 h-5" />
-              <span className="sr-only group-hover:not-sr-only text-sm font-medium pr-1">Phân công</span>
-            </button>
+            {/* Show different buttons based on filterStatus */}
+            {filterStatus === 'completed' ? (
+              // Rollback button for completed only
+              <button
+                onClick={() => handleBulkRevert(Array.from(selectedClasses))}
+                className="p-2 hover:bg-warning-50 text-warning-600 rounded-full transition-colors flex items-center gap-2 group"
+                title="Rollback về chờ xử lý"
+              >
+                <RotateCcw className="w-5 h-5" />
+                <span className="sr-only group-hover:not-sr-only text-sm font-medium pr-1">Rollback</span>
+              </button>
+            ) : filterStatus === 'cancelled' || filterStatus === 'rejected' ? (
+              // Rollback (uncancel) button for cancelled/rejected
+              <button
+                onClick={() => handleBulkRevert(Array.from(selectedClasses))}
+                className="p-2 hover:bg-success-50 text-success-600 rounded-full transition-colors flex items-center gap-2 group"
+                title="Không hủy - đưa về chờ xử lý"
+              >
+                <RotateCcw className="w-5 h-5" />
+                <span className="sr-only group-hover:not-sr-only text-sm font-medium pr-1">Không hủy</span>
+              </button>
+            ) : (
+              // Normal buttons for pending/assigned/all
+              <>
+                <button
+                  onClick={() => handleBulkAutoAssign(Array.from(selectedClasses))}
+                  className="p-2 hover:bg-success-50 text-success-600 rounded-full transition-colors flex items-center gap-2 group"
+                  title="Phân công tự động"
+                >
+                  <Zap className="w-5 h-5" />
+                  <span className="sr-only group-hover:not-sr-only text-sm font-medium pr-1">Phân công</span>
+                </button>
+                
+                <button
+                  onClick={() => handleBulkComplete(Array.from(selectedClasses))}
+                  className="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition-colors flex items-center gap-2 group"
+                  title="Đánh dấu hoàn thành"
+                >
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="sr-only group-hover:not-sr-only text-sm font-medium pr-1">Hoàn thành</span>
+                </button>
+              </>
+            )}
             
-            <button
-              onClick={() => handleBulkComplete(Array.from(selectedClasses))}
-              className="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition-colors flex items-center gap-2 group"
-              title="Đánh dấu hoàn thành"
-            >
-              <CheckCircle className="w-5 h-5" />
-              <span className="sr-only group-hover:not-sr-only text-sm font-medium pr-1">Hoàn thành</span>
-            </button>
-            
+            {/* Delete button - always show */}
             <button
               onClick={() => handleBulkDelete(Array.from(selectedClasses))}
               className="p-2 hover:bg-danger-50 text-danger-600 rounded-full transition-colors flex items-center gap-2 group"
@@ -707,6 +769,7 @@ const OffsetClasses = () => {
               <span className="sr-only group-hover:not-sr-only text-sm font-medium pr-1">Xóa</span>
             </button>
             
+            {/* Cancel selection - always show */}
             <button
               onClick={() => setSelectedClasses(new Set())}
               className="p-2 hover:bg-secondary-100 text-secondary-500 rounded-full transition-colors"
@@ -717,6 +780,7 @@ const OffsetClasses = () => {
           </div>
         </div>
       )}
+
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
