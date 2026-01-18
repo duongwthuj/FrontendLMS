@@ -128,6 +128,7 @@ export const offsetClassesAPI = {
   // Bulk operations
   bulkDelete: (classIds) => api.delete('/offset-classes/bulk', { data: { classIds } }),
   bulkComplete: (classIds) => api.patch('/offset-classes/bulk/complete', { classIds }),
+  weeklyDuty: (data) => api.post('/offset-classes/weekly-duty', data),
 };
 
 // Dashboard/Statistics API

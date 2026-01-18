@@ -48,6 +48,14 @@ const OffsetClasses = () => {
   const [syncing, setSyncing] = useState(false);
   const [groupByEmail, setGroupByEmail] = useState(false);
   const [selectedClasses, setSelectedClasses] = useState(new Set());
+  
+  // Weekly Duty Generation State
+  const [showDutyModal, setShowDutyModal] = useState(false);
+  const [dutyType, setDutyType] = useState('TYPE_1');
+  const [dutyDateRange, setDutyDateRange] = useState({
+    fromDate: new Date().toISOString().split('T')[0],
+    toDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0]
+  });
   const [isExternalTeacher, setIsExternalTeacher] = useState(false);
 
   // Auto hide notification after 5 seconds
@@ -122,6 +130,29 @@ const OffsetClasses = () => {
     }
   };
 
+  const handleGenerateDuty = async () => {
+    try {
+      setLoading(true);
+      await offsetClassesAPI.weeklyDuty({
+        fromDate: dutyDateRange.fromDate,
+        toDate: dutyDateRange.toDate,
+        type: dutyType
+      });
+      
+      // Close modal and refresh
+      setShowDutyModal(false);
+      loadData();
+      
+      // Show success message (you might want to add a toast notification system here)
+      showNotification('Tạo lịch trực thành công!', 'success');
+      
+    } catch (error) {
+      console.error('Error generating duty:', error);
+      showNotification('Lỗi tạo lịch trực: ' + error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   const handleAutoAssign = async (id) => {
@@ -347,6 +378,12 @@ const OffsetClasses = () => {
   const handleSubmitWithAutoAssignment = async (e) => {
     e.preventDefault();
     try {
+      // Validation
+      if (!formData.subjectLevelId || !formData.className || !formData.scheduledDate || !formData.startTime || !formData.endTime) {
+         showNotification('Vui lòng điền đầy đủ các thông tin bắt buộc (*)', 'error');
+         return;
+      }
+      
       setAutoAssigning(true);
 
       const payload = { ...formData };
@@ -688,6 +725,14 @@ const OffsetClasses = () => {
           >
             <Plus className="w-4 h-4 mr-2" />
             Thêm lớp offset
+          </Button>
+
+          <Button
+            onClick={() => setShowDutyModal(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            Tạo lịch trực
           </Button>
 
           <Button
@@ -1968,6 +2013,88 @@ const OffsetClasses = () => {
                   </div>
                 </form>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Weekly Duty Modal */}
+      {showDutyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-800">Tạo Lịch Trực Tuần</h2>
+              <button
+                onClick={() => setShowDutyModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Loại Lịch
+                </label>
+                <select
+                  value={dutyType}
+                  onChange={(e) => setDutyType(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="TYPE_1">Loại 1 (T2, T4, T6: 19:30 | CN: 09:30)</option>
+                  <option value="TYPE_2">Loại 2 (T3, T5, T7, CN: 19:30)</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Từ ngày
+                  </label>
+                  <input
+                    type="date"
+                    value={dutyDateRange.fromDate}
+                    onChange={(e) => setDutyDateRange({...dutyDateRange, fromDate: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Đến ngày
+                  </label>
+                  <input
+                    type="date"
+                    value={dutyDateRange.toDate}
+                    onChange={(e) => setDutyDateRange({...dutyDateRange, toDate: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-700">
+                <p className="font-semibold">Lưu ý:</p>
+                <ul className="list-disc list-inside mt-1">
+                  <li>Sẽ tạo 3 lớp cho mỗi khung giờ.</li>
+                  <li>Tự động phân công giáo viên ít giờ dạy nhất.</li>
+                  <li>Chỉ tạo lịch cho các ngày nằm trong khoảng đã chọn.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => setShowDutyModal(false)}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleGenerateDuty}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              >
+                Tạo lịch
+              </button>
             </div>
           </div>
         </div>
